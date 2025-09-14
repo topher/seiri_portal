@@ -1,0 +1,215 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js
+.next/
+out/
+
+# Production build
+/build
+/dist
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Environment variables and API keys
+.env*
+*.env
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.example
+*api-key*
+*openai*
+*anthropic*
+*claude*
+sk-*
+claude-*
+API_KEY*
+OPENAI_*
+ANTHROPIC_*
+CLAUDE_*
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Clerk configuration (can include secrets)
+/.clerk/
+
+# Logs
+logs
+*.log
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# temporary folders
+tmp/
+temp/
+
+# ===============================
+# INTELLECTUAL PROPERTY EXCLUSIONS
+# ===============================
+
+# Proprietary business logic and AI implementations
+/src/core/suites/
+/src/workflows/
+/master-ontology/
+/service-shop/
+
+# Agent mesh and AI intelligence 
+/agent-mesh/
+/claude_agents/
+/shared_context/
+
+# Business strategy and competitive intelligence
+*business-model*
+*strategy*
+*competitive*
+*market-analysis*
+*revenue*
+*pricing*
+BUSINESS_*.md
+STRATEGY_*.md
+COMPETITIVE_*.md
+MARKET_*.md
+
+# Proprietary documentation and specs
+/docs/seiri_*
+/docs/business_*
+/docs/strategy_*
+SEIRI_*.md
+BUSINESS_*.md
+STRATEGY_*.md
+COMPETITIVE_*.md
+
+# Client-specific and proprietary data
+*client-data*
+*customer-data*
+*proprietary*
+client-portal/
+garrochista/
+vinovoyage*/
+tangomde/
+myceliumql/
+
+# Internal development tools and scripts
+*.sh
+samde_*
+launch_*
+trigger_*
+run_agents.*
+auto_launch_*
+smart_trigger_*
+update_*
+monitor_*
+
+# Proprietary test data and scenarios
+/tests/scenarios/
+/tests/integration/proprietary/
+*test-data*
+*mock-data*
+*sample-data*
+
+# Business reports and analysis
+*_REPORT.md
+*_ANALYSIS.md
+*_EXECUTION_*.md
+*_IMPLEMENTATION_*.md
+*VALUATION*.md
+*RECOMMENDATIONS*.md
+
+# Legal and compliance
+/legal/
+/compliance/
+LICENSE_PROPRIETARY*
+PATENT_*
+TRADEMARK_*
+
+# Configuration with sensitive business logic
+/config/business/
+/config/pricing/
+/config/strategy/
+
+# Database schemas with proprietary structure
+*business-schema*
+*proprietary-schema*
+/database/proprietary/
+
+# API keys and proprietary endpoints
+/api/proprietary/
+/api/internal/
+*api-keys*
+*endpoints-internal*
+
+# Proprietary algorithms and implementations  
+/algorithms/proprietary/
+/ml-models/
+/ai-training-data/
+*.pkl
+*.model
+*.weights
+
+# Archive of proprietary materials
+/archive/proprietary/
+/backup/sensitive/
+
+# Development notes with business insights
+NOTES_BUSINESS.md
+NOTES_STRATEGY.md
+NOTES_COMPETITIVE.md
+*business-notes*
+*strategy-notes*
+*internal-notes*
