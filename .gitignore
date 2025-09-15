@@ -213,3 +213,42 @@ NOTES_COMPETITIVE.md
 *business-notes*
 *strategy-notes*
 *internal-notes*
+
+# ===============================
+# CLAUDE & SAMDE PROTECTION
+# ===============================
+
+# Claude agent commands and SAMDE system (SENSITIVE)
+.claude/
+/.claude/
+**/.claude/
+.samde/
+/.samde/
+**/.samde/
+
+# SAMDE workflow files
+samde_*_workflow.yaml
+*_SAMDE_*.md
+SAMDE_*.md
+
+# Agent command files
+*-agent.md
+*_agent.md
+*agent*.md
+
+# Launch and automation scripts
+launch_*.sh
+trigger_*.sh
+activate_*.sh
+smart_trigger_*.sh
+monitor_*.sh
+
+# Shared context between agents
+shared_context/
+/shared_context/
+**/shared_context/
+
+# Agent completion flags and logs
+*.flag
+agent_*.log
+trigger_*.log

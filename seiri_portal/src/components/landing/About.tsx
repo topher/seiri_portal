@@ -84,10 +84,9 @@ const About = () => {
             <div className="relative">
               <div className="aspect-square max-w-md mx-auto bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl p-8 flex items-center justify-center border border-gray-600">
                 <div className="text-gray-400 text-center">
-                  <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full flex items-center justify-center">
+                  <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-r from-teal-500 to-teal-700 rounded-full flex items-center justify-center">
                     <span className="text-white text-3xl font-bold">CF</span>
                   </div>
-                  <p className="text-sm">Professional Photo</p>
                   <p className="text-xs text-gray-500 mt-1">Founder & CEO</p>
                 </div>
               </div>
