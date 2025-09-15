@@ -1,0 +1,1032 @@
+# Enhanced GraphQL Schema with Agent Mesh Integration and Validation
+# Extends base schema with agent capabilities and three-layer validation
+
+scalar DateTime
+scalar JSON
+
+# Enhanced validation directives
+directive @validates(
+  ontologyClass: String!
+  minCardinality: Int
+  maxCardinality: Int
+  customRules: [String!]
+  required: Boolean = false
+  pattern: String
+) on FIELD_DEFINITION
+
+directive @neo4jConstraint(
+  unique: Boolean = false
+  indexed: Boolean = false
+  nodeType: String!
+  property: String!
+  relationship: String
+) on FIELD_DEFINITION
+
+directive @shaclValidation(
+  shapeUri: String!
+  severity: String = "sh:Violation"
+  enabled: Boolean = true
+) on FIELD_DEFINITION
+
+directive @agentCapability(
+  capability: String!
+  agentType: String
+  confidence: Int = 70
+) on FIELD_DEFINITION
+
+# Agent mesh directives
+directive @aiEnhanced(agent: String!) on FIELD_DEFINITION
+directive @suggestible on FIELD_DEFINITION  
+directive @automatable on FIELD_DEFINITION
+
+type Query {
+  # Core entity queries
+  workspace(id: ID!): Workspace
+  suite(id: ID!): Suite
+  initiative(id: ID!): Initiative
+  task(id: ID!): Task
+  acceptanceCriterion(id: ID!): AcceptanceCriterion
+  
+  # User and workspace context
+  me: User
+  workspaces: [Workspace!]!
+  
+  # Agent mesh queries
+  agentTemplates: [AgentTemplate!]!
+  agentInstances(workspaceId: ID!): [AgentInstance!]!
+  coordinationPatterns: [CoordinationPattern!]!
+  activeExecutions(workspaceId: ID!): [CoordinationExecution!]!
+  
+  # AI-enhanced queries
+  workspaceInsights(id: ID!): WorkspaceInsights! @aiEnhanced(agent: "workspace")
+  suiteRecommendations(id: ID!): [Recommendation!]! @aiEnhanced(agent: "suite")
+  initiativePlan(id: ID!): InitiativePlan! @aiEnhanced(agent: "initiative") 
+  taskBreakdown(id: ID!): TaskBreakdown! @aiEnhanced(agent: "task")
+  
+  # Agent capability queries
+  findCapableAgents(capability: String!, workspaceId: ID!): [AgentInstance!]!
+  agentHealth(agentId: ID!): AgentHealth!
+  agentMetrics(agentId: ID!, timeRange: TimeRange!): AgentMetrics!
+}
+
+type Mutation {
+  # Suite-Initiative Management
+  createInitiative(input: CreateInitiativeInput!): Initiative!
+  updateInitiative(id: ID!, input: UpdateInitiativeInput!): Initiative!
+  deleteInitiative(id: ID!): Boolean!
+  
+  # RACI Matrix Management
+  updateInitiativeRACI(initiativeId: ID!, raci: RACIInput!): Initiative!
+  
+  # Task Management with Agent Requirements
+  createTask(input: CreateTaskInput!): Task!
+  updateTask(id: ID!, input: UpdateTaskInput!): Task!
+  updateTaskProgress(id: ID!, progress: Float!): Task!
+  
+  # Value Tracking
+  updateInitiativeValue(initiativeId: ID!, value: InitiativeValueInput!): InitiativeValue!
+  
+  # Agent mesh operations
+  createAgentInstance(input: CreateAgentInstanceInput!): AgentInstance!
+  updateAgentStatus(agentId: ID!, status: AgentStatus!): AgentInstance!
+  executeCoordinationPattern(input: ExecutePatternInput!): CoordinationExecution!
+  approveCheckpoint(checkpointId: ID!, approved: Boolean!, comments: String): CheckpointApproval!
+  
+  # Existing agent operations (enhanced with validation)
+  generateInitiativePlanning(
+    initiativeId: ID!
+  ): InitiativePlanningResult! 
+    @agentCapability(capability: "planning")
+    @validates(ontologyClass: "Initiative", required: true)
+  
+  generateInitiativeStrategy(
+    initiativeId: ID!
+  ): InitiativeStrategyResult! 
+    @agentCapability(capability: "strategy")
+    @validates(ontologyClass: "Initiative", required: true)
+  
+  trackInitiativeProgress(
+    initiativeId: ID!
+  ): InitiativeProgressResult! 
+    @agentCapability(capability: "tracking")
+    @validates(ontologyClass: "Initiative", required: true)
+  
+  autoGenerateInitiativeTasks(
+    initiativeId: ID!
+  ): InitiativeTasksResult! 
+    @agentCapability(capability: "task_generation")
+    @validates(ontologyClass: "Initiative", required: true)
+    @automatable
+  
+  # Enhanced agent operations
+  generateWorkspaceStrategy(input: StrategyInput!): Strategy! @aiEnhanced(agent: "workspace")
+  optimizeInitiative(id: ID!): OptimizationResult! @aiEnhanced(agent: "initiative")
+  suggestTasks(initiativeId: ID!): [TaskSuggestion!]! @aiEnhanced(agent: "task") @suggestible
+  autoAssignTasks(initiativeId: ID!): AssignmentResult! @automatable
+  
+  # Interactive agent operations
+  chatWithAgent(input: ChatInput!): ChatResponse!
+  refineAgentSuggestion(input: RefinementInput!): RefinedResult!
+}
+
+type Subscription {
+  # Real-time agent updates
+  agentProgress(operationId: ID!): AgentProgress!
+  insightsUpdated(workspaceId: ID!): InsightUpdate!
+  chatMessage(sessionId: ID!): ChatMessage!
+  coordinationExecutionUpdated(executionId: ID!): CoordinationExecution!
+  agentHealthUpdated(agentId: ID!): AgentHealth!
+}
+
+# Enhanced core types with validation
+
+type User {
+  id: ID!
+  email: String! @validates(pattern: "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")
+  name: String
+  workspaces: [Workspace!]!
+}
+
+type Workspace {
+  id: ID! @neo4jConstraint(unique: true, nodeType: "Workspace", property: "id")
+  name: String! @validates(required: true, minCardinality: 1)
+  description: String
+  tier: WorkspaceTier!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Core relationships - Always 6 suites
+  suites: [Suite!]! @validates(minCardinality: 6, maxCardinality: 6, ontologyClass: "Suite")
+  initiatives: [Initiative!]!
+  members: [WorkspaceMember!]!
+  
+  # Agent mesh relationships
+  agents: [AgentInstance!]!
+  activeExecutions: [CoordinationExecution!]!
+  
+  # Workspace-level insights
+  insights: WorkspaceInsights @aiEnhanced(agent: "workspace")
+  healthCheck: WorkspaceHealthCheck @aiEnhanced(agent: "workspace")
+}
+
+type Suite {
+  id: ID! @neo4jConstraint(unique: true, nodeType: "Suite", property: "id")
+  type: SuiteType! @validates(required: true)
+  name: String! @validates(required: true)
+  description: String
+  workspaceId: ID! @validates(required: true)
+  capabilities: [String!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Relationships
+  workspace: Workspace!
+  agents: [AgentInstance!]!
+  responsibleInitiatives: [Initiative!]!
+  accountableInitiatives: [Initiative!]!
+  consultedInitiatives: [Initiative!]!
+  informedInitiatives: [Initiative!]!
+  
+  # Suite-level insights
+  insights: SuiteInsights @aiEnhanced(agent: "suite")
+  recommendations: [Recommendation!]! @aiEnhanced(agent: "suite") @suggestible
+}
+
+type Initiative {
+  id: ID! @neo4jConstraint(unique: true, nodeType: "Initiative", property: "id")
+  name: String! @validates(required: true)
+  description: String
+  status: InitiativeStatus!
+  priority: InitiativePriority!
+  workspaceId: ID! @validates(required: true)
+  estimatedValue: Float
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # RACI relationships with validation
+  accountableSuite: Suite @validates(ontologyClass: "Suite", required: true)
+  responsibleSuites: [Suite!]! @validates(minCardinality: 1, ontologyClass: "Suite")
+  consultedSuites: [Suite!]!
+  informedSuites: [Suite!]!
+  
+  # Enhanced validation with SHACL
+  tasks: [Task!]! @shaclValidation(shapeUri: "http://seiri.ai/shapes/Initiative")
+  valueTracking: InitiativeValue
+  
+  # Initiative-level insights
+  plan: InitiativePlan @aiEnhanced(agent: "initiative")
+  strategy: InitiativeStrategy @aiEnhanced(agent: "initiative")
+  progress: InitiativeProgress @aiEnhanced(agent: "initiative")
+  optimization: OptimizationSuggestions @aiEnhanced(agent: "initiative") @suggestible
+}
+
+type Task {
+  id: ID! @neo4jConstraint(unique: true, nodeType: "Task", property: "id")
+  title: String! @validates(required: true)
+  description: String
+  status: TaskStatus!
+  priority: TaskPriority!
+  initiativeId: ID! @validates(required: true)
+  assigneeId: String
+  estimatedHours: Float
+  actualHours: Float
+  progress: Float! @validates(pattern: "^[0-9]+(\\.[0-9]+)?$")
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Agent requirements with validation
+  agentRequirements: [AgentRequirement!]! @validates(ontologyClass: "AgentRequirement")
+  acceptanceCriteria: [AcceptanceCriterion!]! 
+    @validates(minCardinality: 1, ontologyClass: "AcceptanceCriterion")
+    @shaclValidation(shapeUri: "http://seiri.ai/shapes/AcceptanceCriterion")
+  
+  # Relationships
+  initiative: Initiative!
+  assignee: User
+  dependencies: [Task!]!
+  dependents: [Task!]!
+  
+  # Task-level insights
+  breakdown: TaskBreakdown @aiEnhanced(agent: "task")
+  suggestions: [TaskSuggestion!]! @aiEnhanced(agent: "task") @suggestible
+  autoAssignment: AssignmentSuggestion @aiEnhanced(agent: "task") @automatable
+}
+
+type AcceptanceCriterion {
+  id: ID!
+  taskId: ID! @validates(required: true)
+  criterion: String! 
+    @validates(required: true)
+    @shaclValidation(shapeUri: "http://seiri.ai/shapes/AcceptanceCriterion")
+  completed: Boolean!
+  createdAt: DateTime!
+  
+  task: Task!
+}
+
+# Agent Mesh Types
+
+type AgentTemplate {
+  id: ID! @neo4jConstraint(unique: true, nodeType: "AgentTemplate", property: "id")
+  category: String!
+  version: String!
+  name: String!
+  description: String!
+  capabilities: [Capability!]!
+  requiredResources: [String!]!
+  ontologyExpertise: [String!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type AgentInstance {
+  id: ID! @neo4jConstraint(unique: true, nodeType: "Agent", property: "id")
+  templateId: ID!
+  workspaceId: ID!
+  suiteId: ID
+  status: AgentStatus!
+  subgraphId: ID
+  healthScore: Float!
+  lastHeartbeat: DateTime!
+  performanceMetrics: AgentPerformanceMetrics!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  template: AgentTemplate!
+  workspace: Workspace!
+  suite: Suite
+  capabilities: [Capability!]!
+  health: AgentHealth!
+}
+
+type Capability {
+  id: ID!
+  name: String!
+  description: String!
+  domain: String!
+  type: CapabilityType!
+  requiredInputs: [String!]!
+  outputSchema: String!
+  validationRules: [String!]!
+  ontologyClasses: [String!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type CoordinationPattern {
+  id: ID!
+  name: String!
+  type: CoordinationPatternType!
+  description: String!
+  stages: [CoordinationStage!]!
+  transitions: [CoordinationTransition!]!
+  checkpoints: [HumanCheckpoint!]!
+  metadata: PatternMetadata!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type CoordinationStage {
+  id: ID!
+  name: String!
+  agentTemplateId: ID!
+  operation: String!
+  inputs: [String!]!
+  expectedOutputs: [String!]!
+  validationRules: [String!]!
+  dependencies: [String!]!
+  parallelizable: Boolean!
+  timeout: Int!
+  retryConfig: RetryConfig!
+}
+
+type CoordinationTransition {
+  id: ID!
+  fromStage: String!
+  toStage: String!
+  condition: String!
+  conditionParams: JSON!
+  delay: Int
+  metadata: JSON!
+}
+
+type HumanCheckpoint {
+  id: ID!
+  name: String!
+  type: CheckpointType!
+  description: String!
+  afterStage: String!
+  timeout: Int!
+  escalationPath: [String!]!
+  requiredRoles: [String!]!
+  metadata: JSON!
+}
+
+type CoordinationExecution {
+  id: ID!
+  patternId: ID!
+  workspaceId: ID!
+  initiatorId: ID!
+  status: ExecutionStatus!
+  currentStageId: ID
+  stageExecutions: [StageExecution!]!
+  checkpointApprovals: [CheckpointApproval!]!
+  results: JSON!
+  error: String
+  startTime: DateTime!
+  endTime: DateTime
+  metadata: JSON!
+  
+  pattern: CoordinationPattern!
+  workspace: Workspace!
+  initiator: User!
+}
+
+type StageExecution {
+  id: ID!
+  stageId: ID!
+  agentInstanceId: ID!
+  status: StageExecutionStatus!
+  inputs: JSON!
+  outputs: JSON!
+  error: String
+  startTime: DateTime!
+  endTime: DateTime
+  duration: Int
+  retryCount: Int!
+  metadata: JSON!
+  
+  agent: AgentInstance!
+}
+
+type CheckpointApproval {
+  id: ID!
+  checkpointId: ID!
+  status: ApprovalStatus!
+  approverIds: [ID!]!
+  comments: String!
+  requestedAt: DateTime!
+  respondedAt: DateTime
+  metadata: JSON!
+  
+  approvers: [User!]!
+}
+
+# Enhanced insight types with validation
+
+type WorkspaceInsights {
+  overview: String!
+  keyMetrics: [Metric!]!
+  recommendations: [Recommendation!]! @suggestible
+  healthScore: Float!
+  riskFactors: [RiskFactor!]!
+  opportunities: [Opportunity!]!
+}
+
+type SuiteInsights {
+  performance: SuitePerformance!
+  utilization: SuiteUtilization!
+  recommendations: [Recommendation!]! @suggestible
+  crossSuiteAlignment: [AlignmentScore!]!
+}
+
+type InitiativePlan {
+  phases: [Phase!]!
+  timeline: Timeline!
+  resourceRequirements: [ResourceRequirement!]!
+  dependencies: [Dependency!]!
+  riskMitigation: [RiskMitigation!]!
+}
+
+type TaskBreakdown {
+  subtasks: [SubtaskSuggestion!]! @suggestible
+  dependencies: [TaskDependency!]!
+  estimatedEffort: EffortEstimate!
+  requiredSkills: [Skill!]!
+  agentRecommendations: [AgentRecommendation!]! @suggestible
+}
+
+# Input types with validation
+
+input CreateInitiativeInput {
+  name: String! @validates(required: true)
+  description: String
+  priority: InitiativePriority!
+  estimatedValue: Float
+  raci: RACIInput!
+}
+
+input UpdateInitiativeInput {
+  name: String
+  description: String
+  status: InitiativeStatus
+  priority: InitiativePriority
+  estimatedValue: Float
+}
+
+input CreateTaskInput {
+  title: String! @validates(required: true)
+  description: String
+  priority: TaskPriority!
+  initiativeId: ID! @validates(required: true)
+  estimatedHours: Float
+  agentRequirements: [AgentRequirementInput!]
+  acceptanceCriteria: [AcceptanceCriterionInput!]! @validates(minCardinality: 1)
+}
+
+input UpdateTaskInput {
+  title: String
+  description: String
+  status: TaskStatus
+  priority: TaskPriority
+  assigneeId: String
+  estimatedHours: Float
+  actualHours: Float
+  progress: Float
+}
+
+input RACIInput {
+  accountableSuiteId: ID! @validates(required: true)
+  responsibleSuiteIds: [ID!]! @validates(minCardinality: 1)
+  consultedSuiteIds: [ID!]
+  informedSuiteIds: [ID!]
+}
+
+input AgentRequirementInput {
+  role: AgentRole!
+  capabilities: [String!]!
+  priority: Int! @validates(pattern: "^[1-5]$")
+}
+
+input AcceptanceCriterionInput {
+  criterion: String! @validates(required: true)
+}
+
+input CreateAgentInstanceInput {
+  templateId: ID! @validates(required: true)
+  workspaceId: ID! @validates(required: true)
+  suiteId: ID
+}
+
+input ExecutePatternInput {
+  patternId: ID! @validates(required: true)
+  workspaceId: ID! @validates(required: true)
+  inputs: JSON!
+}
+
+input ChatInput {
+  agentId: ID!
+  message: String! @validates(required: true)
+  sessionId: ID
+  context: JSON
+}
+
+input RefinementInput {
+  operationId: ID! @validates(required: true)
+  feedback: String! @validates(required: true)
+  adjustments: JSON
+}
+
+input StrategyInput {
+  workspaceId: ID! @validates(required: true)
+  objectives: [String!]! @validates(minCardinality: 1)
+  constraints: [String!]
+  timeframe: String!
+}
+
+input TimeRange {
+  start: DateTime!
+  end: DateTime!
+}
+
+# Enums
+
+enum WorkspaceTier {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SuiteType {
+  PRODUCT
+  MARKETING
+  DEVELOPMENT
+  OPERATIONS
+  STRATEGY
+  SALES
+}
+
+enum InitiativeStatus {
+  PLANNING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum InitiativePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum AgentStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  MAINTENANCE
+}
+
+enum CapabilityType {
+  META
+  COGNITIVE
+  OPERATIONAL
+}
+
+enum CoordinationPatternType {
+  SEQUENTIAL
+  PARALLEL
+  HYBRID
+  HIERARCHICAL
+}
+
+enum CheckpointType {
+  APPROVAL
+  REVIEW
+  INPUT
+  QUALITY_GATE
+}
+
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  WAITING_APPROVAL
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum StageExecutionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  TIMEOUT
+}
+
+enum AgentRole {
+  PRIMARY
+  SUPPORTING
+  REVIEWER
+  CONSULTANT
+}
+
+# Supporting types
+
+type AgentPerformanceMetrics {
+  operationsCount: Int!
+  avgResponseTime: Float!
+  successRate: Float!
+  cacheHitRate: Float!
+}
+
+type AgentHealth {
+  score: Float!
+  lastCheck: DateTime!
+  issues: [HealthIssue!]!
+  recommendations: [String!]!
+}
+
+type AgentMetrics {
+  totalOperations: Int!
+  successRate: Float!
+  avgDuration: Float!
+  cacheHitRate: Float!
+  errorRate: Float!
+  timeRange: TimeRange!
+}
+
+type PatternMetadata {
+  version: String!
+  category: String!
+  priority: Int!
+  estimatedDuration: Int!
+  requiredResources: [String!]!
+}
+
+type RetryConfig {
+  maxRetries: Int!
+  backoffMultiplier: Float!
+}
+
+type HealthIssue {
+  code: String!
+  message: String!
+  severity: String!
+  timestamp: DateTime!
+}
+
+type Metric {
+  name: String!
+  value: Float!
+  unit: String!
+  trend: String!
+}
+
+type Recommendation {
+  id: ID!
+  type: String!
+  title: String!
+  description: String!
+  priority: Int!
+  impact: String!
+  effort: String!
+  category: String!
+}
+
+type RiskFactor {
+  id: ID!
+  name: String!
+  probability: Float!
+  impact: Float!
+  mitigation: String!
+}
+
+type Opportunity {
+  id: ID!
+  name: String!
+  value: Float!
+  effort: String!
+  timeline: String!
+}
+
+# Agent operation result types
+
+type InitiativePlanningResult {
+  plan: InitiativePlan!
+  confidence: Float!
+  metadata: JSON!
+}
+
+type InitiativeStrategyResult {
+  strategy: InitiativeStrategy!
+  confidence: Float!
+  metadata: JSON!
+}
+
+type InitiativeProgressResult {
+  progress: InitiativeProgress!
+  confidence: Float!
+  metadata: JSON!
+}
+
+type InitiativeTasksResult {
+  tasks: [TaskSuggestion!]!
+  confidence: Float!
+  metadata: JSON!
+}
+
+type Strategy {
+  objectives: [String!]!
+  initiatives: [InitiativeSuggestion!]!
+  timeline: Timeline!
+  resources: [ResourceRequirement!]!
+}
+
+type OptimizationResult {
+  recommendations: [Recommendation!]!
+  projectedImpact: Float!
+  implementationPlan: [OptimizationStep!]!
+}
+
+type AssignmentResult {
+  assignments: [TaskAssignment!]!
+  confidence: Float!
+  reasoning: String!
+}
+
+type ChatResponse {
+  message: String!
+  suggestedActions: [String!]!
+  context: JSON!
+  sessionId: ID!
+}
+
+type RefinedResult {
+  originalOperation: String!
+  refinedOutput: JSON!
+  changes: [String!]!
+  confidence: Float!
+}
+
+# Subscription types
+
+type AgentProgress {
+  operationId: ID!
+  stage: String!
+  progress: Float!
+  message: String!
+  estimatedTimeRemaining: Int
+}
+
+type InsightUpdate {
+  workspaceId: ID!
+  insights: WorkspaceInsights!
+  updatedAt: DateTime!
+}
+
+type ChatMessage {
+  sessionId: ID!
+  message: String!
+  sender: String!
+  timestamp: DateTime!
+  metadata: JSON!
+}
+
+# Additional supporting types for completeness
+
+type SuitePerformance {
+  efficiency: Float!
+  quality: Float!
+  throughput: Float!
+  trends: [Trend!]!
+}
+
+type SuiteUtilization {
+  capacity: Float!
+  allocation: Float!
+  availability: Float!
+  bottlenecks: [String!]!
+}
+
+type AlignmentScore {
+  suiteId: ID!
+  score: Float!
+  factors: [String!]!
+}
+
+type Phase {
+  id: ID!
+  name: String!
+  duration: Int!
+  dependencies: [String!]!
+  deliverables: [String!]!
+}
+
+type Timeline {
+  startDate: DateTime!
+  endDate: DateTime!
+  milestones: [Milestone!]!
+}
+
+type Milestone {
+  name: String!
+  date: DateTime!
+  description: String!
+}
+
+type ResourceRequirement {
+  type: String!
+  quantity: Float!
+  duration: Int!
+  availability: String!
+}
+
+type Dependency {
+  id: ID!
+  type: String!
+  description: String!
+  criticality: String!
+}
+
+type RiskMitigation {
+  risk: String!
+  probability: Float!
+  impact: Float!
+  mitigation: String!
+  contingency: String!
+}
+
+type SubtaskSuggestion {
+  title: String!
+  description: String!
+  estimatedHours: Float!
+  priority: Int!
+  dependencies: [String!]!
+}
+
+type TaskDependency {
+  taskId: ID!
+  type: String!
+  description: String!
+}
+
+type EffortEstimate {
+  hours: Float!
+  confidence: Float!
+  breakdown: [EffortBreakdown!]!
+}
+
+type EffortBreakdown {
+  component: String!
+  hours: Float!
+  reasoning: String!
+}
+
+type Skill {
+  name: String!
+  level: String!
+  importance: Float!
+}
+
+type AgentRecommendation {
+  agentType: String!
+  capabilities: [String!]!
+  reasoning: String!
+  confidence: Float!
+}
+
+type InitiativeStrategy {
+  approach: String!
+  keyMilestones: [Milestone!]!
+  successMetrics: [String!]!
+  riskFactors: [RiskFactor!]!
+}
+
+type InitiativeProgress {
+  overallProgress: Float!
+  phaseProgress: [PhaseProgress!]!
+  blockers: [String!]!
+  nextSteps: [String!]!
+}
+
+type PhaseProgress {
+  phaseId: ID!
+  progress: Float!
+  status: String!
+  issues: [String!]!
+}
+
+type OptimizationSuggestions {
+  efficiency: [Recommendation!]!
+  resource: [Recommendation!]!
+  timeline: [Recommendation!]!
+  quality: [Recommendation!]!
+}
+
+type TaskSuggestion {
+  title: String!
+  description: String!
+  priority: TaskPriority!
+  estimatedHours: Float!
+  requiredSkills: [String!]!
+  reasoning: String!
+}
+
+type AssignmentSuggestion {
+  assigneeId: String!
+  reasoning: String!
+  confidence: Float!
+  alternatives: [AssignmentAlternative!]!
+}
+
+type AssignmentAlternative {
+  assigneeId: String!
+  reasoning: String!
+  confidence: Float!
+}
+
+type InitiativeSuggestion {
+  name: String!
+  description: String!
+  priority: InitiativePriority!
+  estimatedValue: Float!
+  reasoning: String!
+}
+
+type OptimizationStep {
+  description: String!
+  order: Int!
+  effort: String!
+  impact: Float!
+}
+
+type TaskAssignment {
+  taskId: ID!
+  assigneeId: String!
+  reasoning: String!
+  confidence: Float!
+}
+
+type Trend {
+  metric: String!
+  direction: String!
+  magnitude: Float!
+  period: String!
+}
+
+type WorkspaceMember {
+  id: ID!
+  userId: ID!
+  role: String!
+  permissions: [String!]!
+  joinedAt: DateTime!
+  
+  user: User!
+}
+
+type InitiativeValue {
+  estimatedValue: Float!
+  actualValue: Float
+  valueMetrics: [ValueMetric!]!
+  tracking: [ValueTracking!]!
+}
+
+type ValueMetric {
+  name: String!
+  value: Float!
+  unit: String!
+  category: String!
+}
+
+type ValueTracking {
+  date: DateTime!
+  value: Float!
+  notes: String!
+}
+
+input InitiativeValueInput {
+  estimatedValue: Float!
+  actualValue: Float
+  metrics: [ValueMetricInput!]!
+}
+
+input ValueMetricInput {
+  name: String!
+  value: Float!
+  unit: String!
+  category: String!
+}

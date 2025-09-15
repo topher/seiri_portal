@@ -1,0 +1,1298 @@
+# Agent-specific GraphQL schema extensions
+# Extends the base schema with agent operations and types
+
+extend type Query {
+  # Agent discovery and management
+  discoverAgents(operation: String!, contextNodeId: ID!, contextNodeType: NodeType!): [AgentDiscoveryResult!]!
+  getAgent(name: String!): Agent
+  listAgents(type: AgentType): [Agent!]!
+  
+  # Agent analytics and monitoring
+  getAgentStats: AgentRegistryStats!
+  getAgentAnalytics(agentName: String!, timeRange: TimeRangeInput!): AgentAnalytics!
+  
+  # Agent interactions history
+  getAgentInteractions(
+    agentName: String
+    contextNodeId: ID
+    operation: String
+    status: AgentInteractionStatus
+    limit: Int = 50
+    offset: Int = 0
+  ): AgentInteractionConnection!
+}
+
+extend type Mutation {
+  # Agent operation execution
+  executeAgentOperation(input: AgentOperationInput!): AgentOperationResult!
+  
+  # Workspace Agent Operations
+  generateWorkspaceInsights(workspaceId: ID!): WorkspaceInsightsResult!
+  optimizeWorkspace(workspaceId: ID!): WorkspaceOptimizationResult!
+  generateWorkspaceStrategy(workspaceId: ID!, input: StrategyInput!): WorkspaceStrategyResult!
+  performWorkspaceHealthCheck(workspaceId: ID!): WorkspaceHealthResult!
+  
+  # Task Agent Operations
+  generateTaskBreakdown(taskId: ID!): TaskBreakdownResult!
+  estimateTaskEffort(taskId: ID!): TaskEstimationResult!
+  optimizeTask(taskId: ID!): TaskOptimizationResult!
+  analyzeTaskDependencies(taskId: ID!): TaskDependencyAnalysisResult!
+  trackTaskProgress(taskId: ID!, input: ProgressUpdateInput!): TaskProgressResult!
+  autoGenerateSubtasks(taskId: ID!): SubtaskGenerationResult!
+  
+  # Suite Agent Operations
+  generateSuiteAnalysis(suiteId: ID!): SuiteAnalysisResult!
+  optimizeSuite(suiteId: ID!): SuiteOptimizationResult!
+  generateSuiteStrategy(suiteId: ID!, input: StrategyInput!): SuiteStrategyResult!
+  performSuiteHealthCheck(suiteId: ID!): SuiteHealthResult!
+  
+  # Initiative Agent Operations
+  generateInitiativePlanning(initiativeId: ID!, requirements: PlanningRequirementsInput): InitiativePlanningResult!
+  generateInitiativeStrategy(initiativeId: ID!, input: StrategyInput!): InitiativeStrategyResult!
+  trackInitiativeProgress(initiativeId: ID!): InitiativeProgressResult!
+  autoGenerateInitiativeTasks(initiativeId: ID!, requirements: TaskGenerationInput): TaskGenerationResult!
+  
+  # Agent management (admin operations)
+  enableAgent(name: String!, enabled: Boolean!): Boolean!
+  setAgentPriority(name: String!, priority: Int!): Boolean!
+  
+  # Agent health and maintenance
+  performHealthCheck(agentName: String): AgentHealthResult!
+  clearAgentCache(agentName: String): Boolean!
+}
+
+extend type Subscription {
+  # Real-time agent updates
+  agentOperationProgress(operationId: ID!): AgentOperationProgress!
+  agentHealthUpdates: AgentHealthUpdate!
+  agentInteractionStream(agentName: String): AgentInteraction!
+}
+
+# Core agent types
+type Agent {
+  name: String!
+  type: AgentType!
+  version: String!
+  capabilities: AgentCapabilities!
+  enabled: Boolean!
+  priority: Int!
+  healthStatus: AgentHealthStatus!
+  lastHealthCheck: DateTime!
+  errorCount: Int!
+  registeredAt: DateTime!
+}
+
+type AgentCapabilities {
+  canAnalyze: Boolean!
+  canGenerate: Boolean!
+  canOptimize: Boolean!
+  canSuggest: Boolean!
+  canAutomate: Boolean!
+}
+
+type AgentDiscoveryResult {
+  agentName: String!
+  agentType: AgentType!
+  capabilities: AgentCapabilities!
+  availableOperations: [String!]!
+  canHandle: Boolean!
+  priority: Int!
+  healthStatus: String!
+}
+
+type AgentRegistryStats {
+  totalAgents: Int!
+  enabledAgents: Int!
+  healthyAgents: Int!
+  totalInteractions: Int!
+  avgResponseTime: Float!
+  topAgents: [AgentStatsEntry!]!
+}
+
+type AgentStatsEntry {
+  name: String!
+  type: AgentType!
+  interactions: Int!
+  avgResponseTime: Float!
+}
+
+type AgentAnalytics {
+  agentName: String!
+  timeRange: TimeRange!
+  totalInteractions: Int!
+  successRate: Float!
+  avgResponseTime: Float!
+  cacheHitRate: Float!
+  operationBreakdown: [OperationStats!]!
+  errorBreakdown: [ErrorStats!]!
+}
+
+type OperationStats {
+  operation: String!
+  count: Int!
+  avgResponseTime: Float!
+  successRate: Float!
+}
+
+type ErrorStats {
+  error: String!
+  count: Int!
+  lastOccurrence: DateTime!
+}
+
+# Agent interactions
+type AgentInteraction {
+  id: ID!
+  agentName: String!
+  agentType: AgentType!
+  userId: String!
+  contextNodeId: String!
+  contextNodeType: NodeType!
+  operation: String!
+  input: JSON!
+  output: JSON
+  status: AgentInteractionStatus!
+  startTime: DateTime!
+  endTime: DateTime
+  duration: Int
+  error: String
+  metadata: AgentInteractionMetadata!
+}
+
+type AgentInteractionMetadata {
+  requestId: String!
+  cacheHit: Boolean!
+  modelUsed: String
+  tokenCount: Int
+  confidenceScore: Float
+}
+
+type AgentInteractionConnection {
+  nodes: [AgentInteraction!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# Agent operations
+type AgentOperationResult {
+  operationId: ID!
+  agentName: String!
+  status: AgentOperationStatus!
+  data: JSON
+  error: String
+  metadata: AgentOperationMetadata!
+}
+
+type AgentOperationMetadata {
+  duration: Int!
+  cached: Boolean!
+  confidence: Float!
+  modelUsed: String!
+  interactionId: String!
+}
+
+type AgentOperationProgress {
+  operationId: ID!
+  agentName: String!
+  status: AgentOperationStatus!
+  progress: Float!
+  currentStep: String
+  estimatedCompletion: DateTime
+  partialResults: JSON
+}
+
+type AgentHealthResult {
+  agentName: String!
+  status: AgentHealthStatus!
+  lastCheck: DateTime!
+  diagnostics: JSON
+}
+
+type AgentHealthUpdate {
+  agentName: String!
+  previousStatus: AgentHealthStatus!
+  newStatus: AgentHealthStatus!
+  timestamp: DateTime!
+  details: String
+}
+
+# Input types
+input AgentOperationInput {
+  operation: String!
+  contextNodeId: ID!
+  contextNodeType: NodeType!
+  input: JSON!
+  options: AgentOperationOptions
+}
+
+input AgentOperationOptions {
+  preferAgent: String
+  requireType: AgentType
+  allowFallback: Boolean = true
+  useCache: Boolean = true
+  cacheTTL: Int
+  timeout: Int
+  retries: Int
+  modelOverride: String
+  temperature: Float
+  maxTokens: Int
+}
+
+input TimeRangeInput {
+  start: DateTime!
+  end: DateTime!
+}
+
+type TimeRange {
+  start: DateTime!
+  end: DateTime!
+}
+
+# Workspace Agent Result Types
+type WorkspaceInsightsResult {
+  success: Boolean!
+  insights: WorkspaceInsights
+  operationId: ID!
+  error: String
+}
+
+type WorkspaceInsights {
+  summary: String!
+  keyMetrics: WorkspaceMetrics!
+  healthScore: HealthScore!
+  trends: WorkspaceTrends!
+  recommendations: [Recommendation!]!
+  criticalIssues: [CriticalIssue!]!
+  generatedAt: DateTime!
+}
+
+type WorkspaceMetrics {
+  totalSuites: Int!
+  totalInitiatives: Int!
+  totalTasks: Int!
+  completionRate: Float!
+  avgTasksPerInitiative: Float!
+  activeWorkstreams: Int!
+}
+
+type HealthScore {
+  overall: Int!
+  breakdown: HealthBreakdown!
+}
+
+type HealthBreakdown {
+  progress: Int!
+  velocity: Int!
+  blockers: Int!
+  quality: Int!
+}
+
+type WorkspaceTrends {
+  progressTrend: TrendDirection!
+  velocityTrend: TrendDirection!
+  workloadTrend: TrendDirection!
+  insights: [String!]!
+}
+
+type Recommendation {
+  id: ID!
+  type: RecommendationType!
+  priority: Priority!
+  title: String!
+  description: String!
+  impact: String!
+  effort: EffortLevel!
+  actionItems: [String!]!
+}
+
+type CriticalIssue {
+  id: ID!
+  severity: Severity!
+  type: IssueType!
+  title: String!
+  description: String!
+  impact: String!
+  suggestedActions: [String!]!
+  affectedAreas: [String!]!
+}
+
+type WorkspaceOptimizationResult {
+  success: Boolean!
+  optimization: WorkspaceOptimization
+  operationId: ID!
+  error: String
+}
+
+type WorkspaceOptimization {
+  suggestions: [OptimizationSuggestion!]!
+  quickWins: [QuickWin!]!
+  longTermImprovements: [LongTermImprovement!]!
+  generatedAt: DateTime!
+}
+
+type OptimizationSuggestion {
+  id: ID!
+  category: OptimizationCategory!
+  title: String!
+  description: String!
+  expectedBenefit: String!
+  implementationSteps: [String!]!
+  estimatedEffort: String!
+  roi: ROILevel!
+}
+
+type QuickWin {
+  title: String!
+  description: String!
+  impact: String!
+  effort: String!
+}
+
+type LongTermImprovement {
+  title: String!
+  description: String!
+  timeline: String!
+  impact: String!
+}
+
+type WorkspaceStrategyResult {
+  success: Boolean!
+  strategy: WorkspaceStrategy
+  operationId: ID!
+  error: String
+}
+
+type WorkspaceStrategy {
+  executiveSummary: String!
+  strategicPillars: [StrategicPillar!]!
+  implementationRoadmap: [RoadmapPhase!]!
+  resourceRequirements: ResourceRequirements!
+  riskMitigation: [RiskMitigation!]!
+  generatedAt: DateTime!
+}
+
+type StrategicPillar {
+  name: String!
+  description: String!
+  objectives: [String!]!
+  keyResults: [String!]!
+}
+
+type RoadmapPhase {
+  phase: String!
+  goals: [String!]!
+  deliverables: [String!]!
+  risks: [String!]!
+  successMetrics: [String!]!
+}
+
+type ResourceRequirements {
+  team: String!
+  tools: [String!]!
+  budget: String!
+  timeline: String!
+}
+
+type RiskMitigation {
+  risk: String!
+  impact: RiskLevel!
+  probability: RiskLevel!
+  mitigation: String!
+}
+
+type WorkspaceHealthResult {
+  success: Boolean!
+  healthCheck: WorkspaceHealth
+  operationId: ID!
+  error: String
+}
+
+type WorkspaceHealth {
+  overallHealth: HealthStatus!
+  healthScore: Int!
+  dimensions: HealthDimensions!
+  urgentActions: [UrgentAction!]!
+  improvementAreas: [ImprovementArea!]!
+  checkedAt: DateTime!
+}
+
+type HealthDimensions {
+  productivity: HealthDimension!
+  teamVelocity: HealthDimension!
+  qualityControl: HealthDimension!
+  riskManagement: HealthDimension!
+}
+
+type HealthDimension {
+  score: Int!
+  status: HealthStatus!
+  indicators: [String!]!
+  concerns: [String!]!
+}
+
+type UrgentAction {
+  priority: Priority!
+  action: String!
+  reason: String!
+  timeline: String!
+}
+
+type ImprovementArea {
+  area: String!
+  currentState: String!
+  targetState: String!
+  steps: [String!]!
+}
+
+# Task Agent Result Types
+type TaskBreakdownResult {
+  success: Boolean!
+  breakdown: TaskBreakdown
+  operationId: ID!
+  error: String
+}
+
+type TaskBreakdown {
+  id: ID!
+  originalTaskId: ID!
+  subtasks: [SubTask!]!
+  dependencies: [TaskDependency!]!
+  estimatedEffort: EffortBreakdown!
+  complexity: ComplexityAnalysis!
+  risks: [TaskRisk!]!
+  recommendations: [String!]!
+  confidence: Float!
+  generatedAt: DateTime!
+}
+
+type SubTask {
+  id: ID!
+  title: String!
+  description: String!
+  type: SubTaskType!
+  priority: Priority!
+  estimatedHours: Float!
+  skills: [String!]!
+  acceptanceCriteria: [String!]!
+  dependencies: [ID!]!
+}
+
+type TaskDependency {
+  id: ID!
+  type: DependencyType!
+  targetTaskId: ID!
+  description: String!
+  critical: Boolean!
+}
+
+type EffortBreakdown {
+  total: Float!
+  breakdown: EffortDetails!
+}
+
+type EffortDetails {
+  planning: Float!
+  development: Float!
+  testing: Float!
+  review: Float!
+}
+
+type ComplexityAnalysis {
+  score: Int!
+  factors: [String!]!
+  reasoning: String!
+}
+
+type TaskRisk {
+  id: ID!
+  type: RiskType!
+  severity: Severity!
+  probability: RiskLevel!
+  description: String!
+  impact: String!
+  mitigation: String!
+}
+
+type TaskEstimationResult {
+  success: Boolean!
+  estimation: TaskEstimation
+  operationId: ID!
+  error: String
+}
+
+type TaskEstimation {
+  baseEstimate: Float!
+  optimisticEstimate: Float!
+  pessimisticEstimate: Float!
+  confidenceLevel: Float!
+  methodology: String!
+  assumptions: [String!]!
+  risks: [String!]!
+  breakdown: EstimationBreakdown!
+  generatedAt: DateTime!
+}
+
+type EstimationBreakdown {
+  analysis: Float!
+  implementation: Float!
+  testing: Float!
+  documentation: Float!
+  buffer: Float!
+}
+
+type TaskOptimizationResult {
+  success: Boolean!
+  optimization: TaskOptimization
+  operationId: ID!
+  error: String
+}
+
+type TaskOptimization {
+  suggestions: [TaskOptimizationSuggestion!]!
+  automationOpportunities: [AutomationOpportunity!]!
+  qualityImprovements: [QualityImprovement!]!
+  processImprovements: [ProcessImprovement!]!
+  generatedAt: DateTime!
+}
+
+type TaskOptimizationSuggestion {
+  id: ID!
+  type: OptimizationType!
+  title: String!
+  description: String!
+  benefit: String!
+  effort: EffortLevel!
+  impact: ImpactLevel!
+}
+
+type AutomationOpportunity {
+  id: ID!
+  area: String!
+  description: String!
+  tools: [String!]!
+  timeSaved: String!
+  complexity: ComplexityLevel!
+}
+
+type QualityImprovement {
+  id: ID!
+  area: String!
+  currentState: String!
+  improvedState: String!
+  implementation: [String!]!
+}
+
+type ProcessImprovement {
+  id: ID!
+  process: String!
+  currentIssue: String!
+  proposal: String!
+  benefits: [String!]!
+}
+
+type TaskDependencyAnalysisResult {
+  success: Boolean!
+  analysis: DependencyAnalysis
+  operationId: ID!
+  error: String
+}
+
+type DependencyAnalysis {
+  internalDependencies: [InternalDependency!]!
+  externalDependencies: [ExternalDependency!]!
+  technicalDependencies: [TechnicalDependency!]!
+  resourceDependencies: [ResourceDependency!]!
+  criticalPath: [CriticalPathStep!]!
+  recommendations: [DependencyRecommendation!]!
+  generatedAt: DateTime!
+}
+
+type InternalDependency {
+  id: ID!
+  type: DependencyType!
+  targetTask: String!
+  description: String!
+  critical: Boolean!
+  estimatedDelay: String!
+  mitigation: String!
+}
+
+type ExternalDependency {
+  id: ID!
+  type: ExternalDependencyType!
+  dependency: String!
+  description: String!
+  owner: String!
+  timeline: String!
+  risk: String!
+}
+
+type TechnicalDependency {
+  id: ID!
+  category: TechnicalDependencyCategory!
+  name: String!
+  version: String!
+  purpose: String!
+  alternatives: [String!]!
+}
+
+type ResourceDependency {
+  id: ID!
+  type: ResourceDependencyType!
+  resource: String!
+  requirement: String!
+  availability: String!
+  impact: String!
+}
+
+type CriticalPathStep {
+  step: String!
+  dependencies: [ID!]!
+  duration: String!
+  risk: String!
+}
+
+type DependencyRecommendation {
+  priority: Priority!
+  action: String!
+  reason: String!
+  timeline: String!
+}
+
+type TaskProgressResult {
+  success: Boolean!
+  progressUpdate: ProgressUpdate
+  operationId: ID!
+  error: String
+}
+
+type ProgressUpdate {
+  taskId: ID!
+  progress: Float!
+  status: String!
+  completedSubtasks: [ID!]!
+  currentPhase: String!
+  blockers: [String!]!
+  estimatedCompletion: DateTime!
+  notes: String!
+  updatedAt: DateTime!
+}
+
+type SubtaskGenerationResult {
+  success: Boolean!
+  subtasks: [SubTask!]!
+  operationId: ID!
+  error: String
+}
+
+# Input Types
+input StrategyInput {
+  goals: [String!]!
+  constraints: [String!]!
+  timeline: String!
+  resources: [String!]!
+}
+
+input ProgressUpdateInput {
+  progress: Float
+  notes: String
+  blockers: [String!]
+  currentPhase: String
+}
+
+input PlanningRequirementsInput {
+  timeline: String
+  budget: String
+  teamSize: Int
+  successCriteria: [String!]
+  constraints: [String!]
+  methodology: String
+}
+
+input TaskGenerationInput {
+  focus: String
+  complexity: String
+  teamSize: Int
+  timeline: String
+  includeTestTasks: Boolean
+  includeDocs: Boolean
+}
+
+# Enums
+enum AgentType {
+  WORKSPACE
+  SUITE
+  INITIATIVE
+  TASK
+  GENERAL
+}
+
+enum NodeType {
+  WORKSPACE
+  SUITE
+  INITIATIVE
+  TASK
+  ACCEPTANCE_CRITERION
+}
+
+enum AgentHealthStatus {
+  HEALTHY
+  DEGRADED
+  UNHEALTHY
+}
+
+enum AgentInteractionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AgentOperationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+# Additional Enums for Agent Operations
+enum TrendDirection {
+  UP
+  DOWN
+  STABLE
+}
+
+enum RecommendationType {
+  PERFORMANCE
+  PROCESS
+  RESOURCE
+  QUALITY
+}
+
+enum EffortLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum IssueType {
+  BLOCKER
+  RISK
+  QUALITY
+  RESOURCE
+}
+
+enum OptimizationCategory {
+  WORKFLOW
+  RESOURCE
+  PROCESS
+  STRUCTURE
+}
+
+enum ROILevel {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum HealthStatus {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  CRITICAL
+}
+
+enum RiskLevel {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum SubTaskType {
+  PLANNING
+  DEVELOPMENT
+  TESTING
+  REVIEW
+  DEPLOYMENT
+  RESEARCH
+}
+
+enum DependencyType {
+  BLOCKS
+  REQUIRES
+  ENHANCES
+}
+
+enum OptimizationType {
+  EFFICIENCY
+  QUALITY
+  PROCESS
+  TOOLS
+}
+
+enum ImpactLevel {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ComplexityLevel {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum RiskType {
+  TECHNICAL
+  RESOURCE
+  TIMELINE
+  QUALITY
+  EXTERNAL
+}
+
+enum ExternalDependencyType {
+  SYSTEM
+  API
+  DATA
+  APPROVAL
+  RESOURCE
+}
+
+enum TechnicalDependencyCategory {
+  LIBRARY
+  SERVICE
+  INFRASTRUCTURE
+  TOOL
+}
+
+enum ResourceDependencyType {
+  SKILL
+  PERSON
+  BUDGET
+  TIME
+  EQUIPMENT
+}
+
+# Suite Agent Result Types
+type SuiteAnalysisResult {
+  success: Boolean!
+  analysis: SuiteAnalysis
+  operationId: ID!
+  error: String
+}
+
+type SuiteAnalysis {
+  overview: SuiteOverview!
+  performance: SuitePerformance!
+  risks: [SuiteRisk!]!
+  opportunities: [SuiteOpportunity!]!
+  recommendations: [SuiteRecommendation!]!
+  generatedAt: DateTime!
+}
+
+type SuiteOverview {
+  status: String!
+  overallScore: Int!
+  keyMetrics: JSON!
+  summary: String!
+}
+
+type SuitePerformance {
+  deliveryRate: Float!
+  qualityScore: Float!
+  resourceEfficiency: Float!
+  timelineAdherence: Float!
+  stakeholderSatisfaction: Float!
+}
+
+type SuiteRisk {
+  type: String!
+  severity: String!
+  description: String!
+  impact: String!
+  mitigation: String!
+  probability: Float!
+}
+
+type SuiteOpportunity {
+  type: String!
+  impact: String!
+  description: String!
+  benefits: String!
+  effort: String!
+  timeline: String!
+}
+
+type SuiteRecommendation {
+  priority: String!
+  category: String!
+  title: String!
+  description: String!
+  expectedOutcome: String!
+  implementationSteps: [String!]!
+  timeframe: String!
+  requiredResources: [String!]!
+}
+
+type SuiteOptimizationResult {
+  success: Boolean!
+  optimization: SuiteOptimizationData
+  operationId: ID!
+  error: String
+}
+
+type SuiteOptimizationData {
+  resourceOptimization: ResourceOptimization!
+  processImprovements: [ProcessOptimization!]!
+  initiativePrioritization: [InitiativePrioritization!]!
+  timeline: TimelineOptimization!
+  generatedAt: DateTime!
+}
+
+type ResourceOptimization {
+  currentAllocation: JSON!
+  recommendedAllocation: JSON!
+  expectedImprovement: Float!
+  reasoning: String!
+}
+
+type ProcessOptimization {
+  process: String!
+  currentEfficiency: Float!
+  targetEfficiency: Float!
+  improvements: [String!]!
+  implementation: [String!]!
+}
+
+type InitiativePrioritization {
+  initiativeId: ID!
+  currentPriority: Int!
+  recommendedPriority: Int!
+  reasoning: String!
+  impactScore: Float!
+  effortScore: Float!
+}
+
+type TimelineOptimization {
+  currentDuration: Int!
+  optimizedDuration: Int!
+  criticalPath: [String!]!
+  bottlenecks: [String!]!
+  accelerationOpportunities: [String!]!
+}
+
+type SuiteStrategyResult {
+  success: Boolean!
+  strategy: SuiteStrategyData
+  operationId: ID!
+  error: String
+}
+
+type SuiteStrategyData {
+  vision: String!
+  objectives: [SuiteObjective!]!
+  roadmap: [SuiteRoadmapPhase!]!
+  successMetrics: [SuiteSuccessMetric!]!
+  stakeholderEngagement: SuiteStakeholderEngagement!
+  generatedAt: DateTime!
+}
+
+type SuiteObjective {
+  id: ID!
+  title: String!
+  description: String!
+  keyResults: [String!]!
+  timeline: String!
+  owner: String!
+  dependencies: [String!]!
+}
+
+type SuiteRoadmapPhase {
+  phase: String!
+  duration: String!
+  objectives: [String!]!
+  deliverables: [String!]!
+  milestones: [String!]!
+  risks: [String!]!
+}
+
+type SuiteSuccessMetric {
+  name: String!
+  target: Float!
+  current: Float!
+  unit: String!
+  measurementFrequency: String!
+}
+
+type SuiteStakeholderEngagement {
+  primaryStakeholders: [String!]!
+  communicationPlan: [String!]!
+  decisionMakers: [String!]!
+  influencers: [String!]!
+}
+
+type SuiteHealthResult {
+  success: Boolean!
+  healthCheck: SuiteHealthData
+  operationId: ID!
+  error: String
+}
+
+type SuiteHealthData {
+  overallHealth: String!
+  healthScore: Int!
+  metrics: SuiteHealthMetrics!
+  issues: [String!]!
+  recommendations: [String!]!
+  checkedAt: DateTime!
+}
+
+type SuiteHealthMetrics {
+  initiativeCompletionRate: Int!
+  taskCompletionRate: Int!
+  resourceUtilization: Int!
+  qualityScore: Int!
+}
+
+# Initiative Agent Result Types
+type InitiativePlanningResult {
+  success: Boolean!
+  planning: InitiativePlanningData
+  operationId: ID!
+  error: String
+}
+
+type InitiativePlanningData {
+  executionPlan: InitiativeExecutionPlan!
+  riskAssessment: InitiativeRiskAssessment!
+  successCriteria: InitiativeSuccessCriteria!
+  generatedAt: DateTime!
+}
+
+type InitiativeExecutionPlan {
+  phases: [InitiativePhase!]!
+  timeline: InitiativeTimeline!
+  resources: InitiativeResources!
+}
+
+type InitiativePhase {
+  name: String!
+  description: String!
+  duration: String!
+  dependencies: [String!]!
+  deliverables: [String!]!
+  tasks: [InitiativePlannedTask!]!
+}
+
+type InitiativePlannedTask {
+  title: String!
+  description: String!
+  estimatedEffort: String!
+  assignee: String
+  dependencies: [String!]!
+  acceptanceCriteria: [String!]!
+}
+
+type InitiativeTimeline {
+  totalDuration: String!
+  startDate: String!
+  endDate: String!
+  criticalPath: [String!]!
+  milestones: [InitiativeMilestone!]!
+}
+
+type InitiativeMilestone {
+  name: String!
+  date: String!
+  deliverables: [String!]!
+}
+
+type InitiativeResources {
+  requiredRoles: [String!]!
+  skillsNeeded: [String!]!
+  estimatedTeamSize: Int!
+  budgetEstimate: String
+}
+
+type InitiativeRiskAssessment {
+  risks: [InitiativeRisk!]!
+  overallRiskScore: Float!
+  riskMitigationPlan: [String!]!
+}
+
+type InitiativeRisk {
+  type: String!
+  severity: String!
+  probability: Float!
+  description: String!
+  impact: String!
+  mitigation: [String!]!
+  contingency: String!
+}
+
+type InitiativeSuccessCriteria {
+  outcomes: [String!]!
+  kpis: [InitiativeKPI!]!
+  acceptanceCriteria: [String!]!
+  definitionOfDone: [String!]!
+}
+
+type InitiativeKPI {
+  name: String!
+  target: String!
+  measurement: String!
+  frequency: String!
+}
+
+type InitiativeStrategyResult {
+  success: Boolean!
+  strategy: InitiativeStrategyData
+  operationId: ID!
+  error: String
+}
+
+type InitiativeStrategyData {
+  vision: String!
+  objectives: [InitiativeStrategicObjective!]!
+  approach: InitiativeApproach!
+  roadmap: [InitiativeStrategicRoadmap!]!
+  stakeholders: InitiativeStakeholders!
+  generatedAt: DateTime!
+}
+
+type InitiativeStrategicObjective {
+  id: ID!
+  title: String!
+  description: String!
+  keyResults: [String!]!
+  priority: String!
+  timeline: String!
+  owner: String!
+  dependencies: [String!]!
+  successMetrics: [String!]!
+}
+
+type InitiativeApproach {
+  methodology: String!
+  principles: [String!]!
+  constraints: [String!]!
+  assumptions: [String!]!
+}
+
+type InitiativeStrategicRoadmap {
+  quarter: String!
+  theme: String!
+  objectives: [String!]!
+  deliverables: [String!]!
+  milestones: [String!]!
+}
+
+type InitiativeStakeholders {
+  primary: [InitiativeStakeholder!]!
+  communicationPlan: [InitiativeCommunicationPlan!]!
+}
+
+type InitiativeStakeholder {
+  name: String!
+  role: String!
+  influence: String!
+  interest: String!
+  engagementStrategy: String!
+}
+
+type InitiativeCommunicationPlan {
+  stakeholder: String!
+  frequency: String!
+  method: String!
+  content: String!
+}
+
+type InitiativeProgressResult {
+  success: Boolean!
+  progress: InitiativeProgressData
+  operationId: ID!
+  error: String
+}
+
+type InitiativeProgressData {
+  status: InitiativeProgressStatus!
+  milestones: [InitiativeProgressMilestone!]!
+  tasks: InitiativeTaskProgress!
+  team: InitiativeTeamProgress!
+  risks: [InitiativeProgressRisk!]!
+  recommendations: [InitiativeProgressRecommendation!]!
+  generatedAt: DateTime!
+}
+
+type InitiativeProgressStatus {
+  overall: String!
+  completionPercentage: Float!
+  daysRemaining: Int!
+  budgetUtilization: Float!
+}
+
+type InitiativeProgressMilestone {
+  name: String!
+  plannedDate: String!
+  actualDate: String
+  status: String!
+  completionPercentage: Float!
+}
+
+type InitiativeTaskProgress {
+  total: Int!
+  completed: Int!
+  inProgress: Int!
+  blocked: Int!
+  overdue: Int!
+}
+
+type InitiativeTeamProgress {
+  utilization: Float!
+  velocity: Float!
+  blockers: [String!]!
+  capacityIssues: [String!]!
+}
+
+type InitiativeProgressRisk {
+  description: String!
+  impact: String!
+  probability: Float!
+  status: String!
+  owner: String!
+}
+
+type InitiativeProgressRecommendation {
+  type: String!
+  description: String!
+  impact: String!
+  effort: String!
+  priority: String!
+}
+
+type TaskGenerationResult {
+  success: Boolean!
+  tasks: [GeneratedTask!]!
+  operationId: ID!
+  error: String
+}
+
+type GeneratedTask {
+  title: String!
+  description: String!
+  estimatedEffort: String!
+  priority: String!
+  assigneeRole: String
+  dependencies: [String!]!
+  acceptanceCriteria: [String!]!
+}

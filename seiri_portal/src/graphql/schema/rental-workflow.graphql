@@ -1,0 +1,361 @@
+# ValueFlows Rental Workflow Schema
+# Implements Intent -> Offer -> Agreement pattern for rental processes
+
+scalar DateTime
+scalar JSON
+
+# Core ValueFlows Types
+type Agent {
+  id: ID!
+  name: String!
+  email: String
+  type: AgentType!
+  workspaceId: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum AgentType {
+  PERSON
+  ORGANIZATION
+  SOFTWARE_AGENT
+}
+
+type ResourceSpecification {
+  id: ID!
+  name: String!
+  description: String
+  category: String!
+  unitOfMeasure: String
+  metadata: JSON
+  workspaceId: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Resource {
+  id: ID!
+  specification: ResourceSpecification!
+  identifier: String
+  condition: String
+  location: String
+  availableFrom: DateTime
+  availableUntil: DateTime
+  currentOwner: Agent!
+  workspaceId: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# Intent Types
+type Intent {
+  id: ID!
+  name: String!
+  description: String
+  action: IntentAction!
+  provider: Agent
+  receiver: Agent!
+  resourceSpecification: ResourceSpecification!
+  resourceQuantity: Float
+  startTime: DateTime
+  endTime: DateTime
+  dueDate: DateTime
+  status: IntentStatus!
+  metadata: JSON
+  workspaceId: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Related entities
+  offers: [Offer!]!
+  agreement: Agreement
+}
+
+enum IntentAction {
+  USE
+  WORK
+  CITE
+  CONSUME
+  PRODUCE
+  ACCEPT
+  MODIFY
+  TRANSFER_CUSTODY
+  TRANSFER_ALL_RIGHTS
+  DELIVER_SERVICE
+}
+
+enum IntentStatus {
+  PENDING
+  MATCHED
+  DECLINED
+  CANCELLED
+  FULFILLED
+}
+
+# Offer Types
+type Offer {
+  id: ID!
+  name: String!
+  description: String
+  provider: Agent!
+  receiver: Agent
+  intent: Intent!
+  resource: Resource
+  resourceQuantity: Float
+  startTime: DateTime
+  endTime: DateTime
+  terms: String
+  price: Float
+  currency: String
+  status: OfferStatus!
+  metadata: JSON
+  workspaceId: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Related entities
+  agreement: Agreement
+}
+
+enum OfferStatus {
+  PROPOSED
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+  EXPIRED
+}
+
+# Agreement Types
+type Agreement {
+  id: ID!
+  name: String!
+  description: String
+  intent: Intent!
+  offer: Offer!
+  provider: Agent!
+  receiver: Agent!
+  resource: Resource!
+  resourceQuantity: Float!
+  startTime: DateTime!
+  endTime: DateTime!
+  terms: String!
+  price: Float
+  currency: String
+  status: AgreementStatus!
+  signedAt: DateTime
+  fulfilledAt: DateTime
+  metadata: JSON
+  workspaceId: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Related entities
+  fulfillments: [Fulfillment!]!
+}
+
+enum AgreementStatus {
+  PENDING
+  SIGNED
+  ACTIVE
+  FULFILLED
+  CANCELLED
+  DISPUTED
+}
+
+# Fulfillment/Process Tracking
+type Fulfillment {
+  id: ID!
+  agreement: Agreement!
+  action: IntentAction!
+  provider: Agent!
+  receiver: Agent!
+  resource: Resource!
+  resourceQuantity: Float!
+  status: FulfillmentStatus!
+  startedAt: DateTime
+  completedAt: DateTime
+  location: String
+  notes: String
+  metadata: JSON
+  workspaceId: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum FulfillmentStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+# Input Types for Mutations
+input CreateIntentInput {
+  name: String!
+  description: String
+  action: IntentAction!
+  receiverId: ID!
+  resourceSpecificationId: ID!
+  resourceQuantity: Float
+  startTime: DateTime
+  endTime: DateTime
+  dueDate: DateTime
+  metadata: JSON
+  workspaceId: String!
+}
+
+input UpdateIntentInput {
+  name: String
+  description: String
+  startTime: DateTime
+  endTime: DateTime
+  dueDate: DateTime
+  status: IntentStatus
+  metadata: JSON
+}
+
+input CreateOfferInput {
+  name: String!
+  description: String
+  intentId: ID!
+  resourceId: ID!
+  resourceQuantity: Float!
+  startTime: DateTime!
+  endTime: DateTime!
+  terms: String
+  price: Float
+  currency: String
+  metadata: JSON
+  workspaceId: String!
+}
+
+input UpdateOfferInput {
+  name: String
+  description: String
+  startTime: DateTime
+  endTime: DateTime
+  terms: String
+  price: Float
+  currency: String
+  status: OfferStatus
+  metadata: JSON
+}
+
+input CreateAgreementInput {
+  name: String!
+  description: String
+  intentId: ID!
+  offerId: ID!
+  terms: String!
+  metadata: JSON
+  workspaceId: String!
+}
+
+input UpdateAgreementInput {
+  name: String
+  description: String
+  terms: String
+  status: AgreementStatus
+  signedAt: DateTime
+  fulfilledAt: DateTime
+  metadata: JSON
+}
+
+input CreateFulfillmentInput {
+  agreementId: ID!
+  action: IntentAction!
+  resourceQuantity: Float!
+  location: String
+  notes: String
+  metadata: JSON
+  workspaceId: String!
+}
+
+input UpdateFulfillmentInput {
+  status: FulfillmentStatus
+  startedAt: DateTime
+  completedAt: DateTime
+  location: String
+  notes: String
+  metadata: JSON
+}
+
+# Queries
+type Query {
+  # Intent queries
+  intent(id: ID!): Intent
+  intents(workspaceId: String!, status: IntentStatus, action: IntentAction): [Intent!]!
+  intentsByReceiver(receiverId: ID!, workspaceId: String!): [Intent!]!
+  intentsByProvider(providerId: ID!, workspaceId: String!): [Intent!]!
+  
+  # Offer queries
+  offer(id: ID!): Offer
+  offers(workspaceId: String!, status: OfferStatus): [Offer!]!
+  offersByIntent(intentId: ID!): [Offer!]!
+  offersByProvider(providerId: ID!, workspaceId: String!): [Offer!]!
+  
+  # Agreement queries
+  agreement(id: ID!): Agreement
+  agreements(workspaceId: String!, status: AgreementStatus): [Agreement!]!
+  agreementsByProvider(providerId: ID!, workspaceId: String!): [Agreement!]!
+  agreementsByReceiver(receiverId: ID!, workspaceId: String!): [Agreement!]!
+  
+  # Fulfillment queries
+  fulfillment(id: ID!): Fulfillment
+  fulfillments(workspaceId: String!, status: FulfillmentStatus): [Fulfillment!]!
+  fulfillmentsByAgreement(agreementId: ID!): [Fulfillment!]!
+  
+  # Resource queries
+  resource(id: ID!): Resource
+  resources(workspaceId: String!, available: Boolean): [Resource!]!
+  resourcesBySpecification(specificationId: ID!): [Resource!]!
+  resourcesByOwner(ownerId: ID!, workspaceId: String!): [Resource!]!
+  
+  # Agent queries
+  agent(id: ID!): Agent
+  agents(workspaceId: String!, type: AgentType): [Agent!]!
+  
+  # Resource specification queries
+  resourceSpecification(id: ID!): ResourceSpecification
+  resourceSpecifications(workspaceId: String!, category: String): [ResourceSpecification!]!
+}
+
+# Mutations
+type Mutation {
+  # Intent mutations
+  createIntent(input: CreateIntentInput!): Intent!
+  updateIntent(id: ID!, input: UpdateIntentInput!): Intent!
+  deleteIntent(id: ID!): Boolean!
+  
+  # Offer mutations
+  createOffer(input: CreateOfferInput!): Offer!
+  updateOffer(id: ID!, input: UpdateOfferInput!): Offer!
+  acceptOffer(id: ID!): Offer!
+  declineOffer(id: ID!): Offer!
+  withdrawOffer(id: ID!): Offer!
+  deleteOffer(id: ID!): Boolean!
+  
+  # Agreement mutations
+  createAgreement(input: CreateAgreementInput!): Agreement!
+  updateAgreement(id: ID!, input: UpdateAgreementInput!): Agreement!
+  signAgreement(id: ID!): Agreement!
+  cancelAgreement(id: ID!): Agreement!
+  deleteAgreement(id: ID!): Boolean!
+  
+  # Fulfillment mutations
+  createFulfillment(input: CreateFulfillmentInput!): Fulfillment!
+  updateFulfillment(id: ID!, input: UpdateFulfillmentInput!): Fulfillment!
+  startFulfillment(id: ID!): Fulfillment!
+  completeFulfillment(id: ID!): Fulfillment!
+  cancelFulfillment(id: ID!): Fulfillment!
+  deleteFulfillment(id: ID!): Boolean!
+}
+
+# Subscriptions for real-time updates
+type Subscription {
+  intentUpdated(workspaceId: String!): Intent!
+  offerUpdated(workspaceId: String!): Offer!
+  agreementUpdated(workspaceId: String!): Agreement!
+  fulfillmentUpdated(workspaceId: String!): Fulfillment!
+}

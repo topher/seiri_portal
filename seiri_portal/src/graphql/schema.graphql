@@ -1,0 +1,782 @@
+# Base GraphQL Schema for AI Agent Mesh Integration
+# Focus on core types, agent-specific fields marked as TODOs
+
+scalar DateTime
+scalar JSON
+
+# Directives for agent capabilities (to be implemented in later prompts)
+directive @aiEnhanced(agent: String!) on FIELD_DEFINITION
+directive @suggestible on FIELD_DEFINITION  
+directive @automatable on FIELD_DEFINITION
+
+type Query {
+  # Core entity queries
+  workspace(id: ID!): Workspace
+  suite(id: ID!): Suite
+  initiative(id: ID!): Initiative
+  task(id: ID!): Task
+  acceptanceCriterion(id: ID!): AcceptanceCriterion
+  
+  # User and workspace context
+  me: User
+  workspaces: [Workspace!]!
+  
+  # TODO: Agent-enhanced queries to be implemented
+  # workspaceInsights(id: ID!): WorkspaceInsights! @aiEnhanced(agent: "workspace")
+  # suiteRecommendations(id: ID!): [Recommendation!]! @aiEnhanced(agent: "suite")
+  # initiativePlan(id: ID!): InitiativePlan! @aiEnhanced(agent: "initiative") 
+  # taskBreakdown(id: ID!): TaskBreakdown! @aiEnhanced(agent: "task")
+}
+
+type Mutation {
+  # Suite-Initiative Management
+  createInitiative(input: CreateInitiativeInput!): Initiative!
+  updateInitiative(id: ID!, input: UpdateInitiativeInput!): Initiative!
+  deleteInitiative(id: ID!): Boolean!
+  
+  # RACI Matrix Management
+  updateInitiativeRACI(initiativeId: ID!, raci: RACIInput!): Initiative!
+  
+  # Task Management with Agent Requirements
+  createTask(input: CreateTaskInput!): Task!
+  updateTask(id: ID!, input: UpdateTaskInput!): Task!
+  updateTaskProgress(id: ID!, progress: Float!): Task!
+  
+  # Value Tracking
+  updateInitiativeValue(initiativeId: ID!, value: InitiativeValueInput!): InitiativeValue!
+  
+  # Existing agent operations (implemented)
+  generateInitiativePlanning(initiativeId: ID!): InitiativePlanningResult!
+  generateInitiativeStrategy(initiativeId: ID!): InitiativeStrategyResult!
+  trackInitiativeProgress(initiativeId: ID!): InitiativeProgressResult!
+  autoGenerateInitiativeTasks(initiativeId: ID!): InitiativeTasksResult!
+  
+  # TODO: Additional agent operations to be implemented in later prompts
+  # generateWorkspaceStrategy(input: StrategyInput!): Strategy! @aiEnhanced(agent: "workspace")
+  # optimizeInitiative(id: ID!): OptimizationResult! @aiEnhanced(agent: "initiative")
+  # suggestTasks(initiativeId: ID!): [TaskSuggestion!]! @aiEnhanced(agent: "task")
+  # autoAssignTasks(initiativeId: ID!): AssignmentResult! @automatable
+  
+  # TODO: Interactive agent operations
+  # chatWithAgent(input: ChatInput!): ChatResponse!
+  # refineAgentSuggestion(input: RefinementInput!): RefinedResult!
+}
+
+type Subscription {
+  # Placeholder subscription - will be replaced with agent subscriptions in later prompts
+  _placeholder: String
+  
+  # TODO: Real-time agent updates to be implemented
+  # agentProgress(operationId: ID!): AgentProgress!
+  # insightsUpdated(workspaceId: ID!): InsightUpdate!
+  # chatMessage(sessionId: ID!): ChatMessage!
+}
+
+# Core domain types
+type User {
+  id: ID!
+  email: String!
+  name: String
+  workspaces: [Workspace!]!
+}
+
+type Workspace {
+  id: ID!
+  name: String!
+  description: String
+  tier: WorkspaceTier!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Core relationships - Always 6 suites
+  suites: [Suite!]! # Always returns exactly 6 suites
+  initiatives: [Initiative!]!
+  members: [WorkspaceMember!]!
+  
+  # Workspace-level insights
+  insights: WorkspaceInsights @aiEnhanced(agent: "workspace")
+  healthCheck: WorkspaceHealthCheck @aiEnhanced(agent: "workspace")
+  
+  # TODO: Additional agent-enhanced fields
+  # suggestions: [Suggestion!]! @suggestible
+  # automationOpportunities: [AutomationOpportunity!]! @automatable
+}
+
+type Suite {
+  id: ID!
+  name: String!
+  type: SuiteType!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Core relationships  
+  workspace: Workspace!
+  initiatives: [Initiative!]!
+  
+  # Domain expertise and capabilities
+  capabilities: [Capability!]!
+  
+  # RACI participation in initiatives
+  initiativeRoles: [InitiativeRole!]!
+  
+  # TODO: Agent fields to be implemented
+  # domainExpertise: DomainInsights @aiEnhanced(agent: "suite")
+  # templates: [Template!]! @aiEnhanced(agent: "suite")
+  # bestPractices: [BestPractice!]! @aiEnhanced(agent: "suite")
+}
+
+# Initiative RACI Role participation
+type InitiativeRole {
+  id: ID!
+  initiative: Initiative!
+  suite: Suite!
+  role: RACIRole!
+  assignedAt: DateTime!
+}
+
+type Initiative {
+  id: ID!
+  name: String!
+  description: String
+  status: InitiativeStatus!
+  priority: Priority!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  startedAt: DateTime
+  completedAt: DateTime
+  
+  # Core relationships
+  workspace: Workspace!
+  suites: [Suite!]! # Related suites through RACI
+  tasks: [Task!]!
+  
+  # RACI Matrix for cross-suite coordination
+  raci: RACI!
+  
+  # Value tracking for client visibility
+  value: InitiativeValue!
+  
+  # Workflow stages and progress
+  stages: [WorkflowStage!]!
+  progress: Float! # 0.0 to 1.0
+  
+  # TODO: Agent assistance to be implemented
+  # plan: InitiativePlan @aiEnhanced(agent: "initiative")
+  # risks: [Risk!]! @aiEnhanced(agent: "initiative")
+  # timeline: Timeline @aiEnhanced(agent: "initiative")
+  # resourceNeeds: [ResourceRequirement!]! @suggestible
+}
+
+type Task {
+  id: ID!
+  title: String!
+  description: String
+  status: TaskStatus!
+  priority: Priority!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  dueDate: DateTime
+  
+  # Core relationships
+  initiative: Initiative!
+  assignee: User
+  acceptanceCriteria: [AcceptanceCriterion!]!
+  
+  # Definition of Done for validation
+  definitionOfDone: DefinitionOfDone!
+  
+  # Agent collaboration requirements
+  agentRequirements: AgentRequirements!
+  
+  # Execution state and deliverables
+  progress: Float! # 0.0 to 1.0
+  deliverables: [Deliverable!]!
+  validationResults: [ValidationResult!]!
+  
+  # TODO: Agent capabilities to be implemented
+  # breakdown: TaskBreakdown @aiEnhanced(agent: "task")
+  # estimation: Estimation @aiEnhanced(agent: "task")
+  # dependencies: [Dependency!]! @suggestible
+  # automationPotential: AutomationScore @automatable
+}
+
+type AcceptanceCriterion {
+  id: ID!
+  title: String!
+  description: String
+  status: AcceptanceCriterionStatus!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Core relationships
+  task: Task!
+}
+
+type WorkspaceMember {
+  id: ID!
+  user: User!
+  workspace: Workspace!
+  role: WorkspaceRole!
+  joinedAt: DateTime!
+}
+
+# RACI Matrix Types for Cross-Suite Coordination
+type RACI {
+  responsible: [Suite!]!  # Who does the work
+  accountable: Suite!     # Who ensures success (exactly one)
+  consulted: [Suite!]!    # Who provides input
+  informed: [Suite!]!     # Who needs updates
+}
+
+# Initiative Value Tracking
+type InitiativeValue {
+  estimatedImpact: String!     # "$2M revenue opportunity"
+  actualImpact: String         # "$1.8M captured" (when completed)
+  metrics: [ValueMetric!]!     # Specific KPIs
+  clientVisibility: VisibilityLevel!  # Always HIGH for initiatives
+}
+
+type ValueMetric {
+  id: ID!
+  name: String!               # "Monthly Recurring Revenue"
+  target: String!             # "$100K increase"
+  current: String             # "$75K achieved"
+  unit: String!               # "USD"
+  category: MetricCategory!   # REVENUE, EFFICIENCY, etc.
+}
+
+# Workflow Stages
+type WorkflowStage {
+  id: ID!
+  name: String!
+  description: String
+  order: Int!
+  status: StageStatus!
+  startedAt: DateTime
+  completedAt: DateTime
+  requiredSuites: [SuiteType!]!  # Which suites need to participate
+}
+
+# Task Definition of Done
+type DefinitionOfDone {
+  criteria: [Criterion!]!
+  validationQueries: [ValidationQuery!]!
+  requiredDeliverables: [DeliverableType!]!
+}
+
+type Criterion {
+  id: ID!
+  description: String!
+  isMandatory: Boolean!
+  isCompleted: Boolean!
+}
+
+type ValidationQuery {
+  id: ID!
+  query: String!              # GraphQL query to validate completion
+  expectedResult: JSON!       # Expected result shape
+  actualResult: JSON          # Actual result when executed
+}
+
+# Agent Requirements and Collaboration
+type AgentRequirements {
+  primary: AgentType!         # Primary agent responsible for execution
+  supporting: [AgentType!]!   # Supporting agents for collaboration
+  reviewers: [AgentType!]!    # Agents that review/validate output
+}
+
+# Task Deliverables
+type Deliverable {
+  id: ID!
+  type: DeliverableType!
+  name: String!
+  description: String
+  status: DeliverableStatus!
+  content: JSON               # Structured deliverable content
+  createdAt: DateTime!
+  completedAt: DateTime
+}
+
+# Validation Results
+type ValidationResult {
+  id: ID!
+  validationType: ValidationType!
+  status: ValidationStatus!
+  message: String!
+  details: JSON
+  validatedAt: DateTime!
+}
+
+# Suite Domain Capabilities
+type Capability {
+  id: ID!
+  name: String!
+  description: String!
+  ontologyClass: String!      # Reference to domain ontology
+  agentTypes: [AgentType!]!   # Which agents provide this capability
+}
+
+# Workspace-level Insights
+type WorkspaceInsights {
+  overallHealth: Float!       # 0.0 to 1.0
+  keyMetrics: [ValueMetric!]!
+  trends: [Trend!]!
+  recommendations: [Recommendation!]!
+  generatedAt: DateTime!
+}
+
+type WorkspaceHealthCheck {
+  score: Float!               # 0.0 to 1.0
+  issues: [HealthIssue!]!
+  recommendations: [String!]!
+  lastChecked: DateTime!
+}
+
+type Trend {
+  metric: String!
+  direction: TrendDirection!  # UP, DOWN, STABLE
+  percentage: Float!
+  timeframe: String!          # "Last 30 days"
+}
+
+type Recommendation {
+  id: ID!
+  title: String!
+  description: String!
+  priority: Priority!
+  category: RecommendationCategory!
+  estimatedImpact: String!
+}
+
+type HealthIssue {
+  severity: Severity!
+  category: String!
+  description: String!
+  suggestedAction: String!
+}
+
+# Input Types for Mutations
+input CreateInitiativeInput {
+  name: String!
+  description: String!
+  workspaceId: ID!
+  raci: RACIInput!
+  value: InitiativeValueInput!
+  priority: Priority! = MEDIUM
+}
+
+input UpdateInitiativeInput {
+  name: String
+  description: String
+  status: InitiativeStatus
+  priority: Priority
+}
+
+input RACIInput {
+  responsible: [ID!]!      # Suite IDs
+  accountable: ID!         # Suite ID (exactly one)
+  consulted: [ID!]!        # Suite IDs  
+  informed: [ID!]!         # Suite IDs
+}
+
+input InitiativeValueInput {
+  estimatedImpact: String!
+  metrics: [ValueMetricInput!]!
+  clientVisibility: VisibilityLevel! = HIGH
+}
+
+input ValueMetricInput {
+  name: String!
+  target: String!
+  unit: String!
+  category: MetricCategory!
+}
+
+input CreateTaskInput {
+  title: String!
+  description: String!
+  initiativeId: ID!
+  priority: Priority! = MEDIUM
+  definitionOfDone: DefinitionOfDoneInput!
+  agentRequirements: AgentRequirementsInput!
+  dueDate: DateTime
+}
+
+input UpdateTaskInput {
+  title: String
+  description: String
+  status: TaskStatus
+  priority: Priority
+  dueDate: DateTime
+}
+
+input DefinitionOfDoneInput {
+  criteria: [CriterionInput!]!
+  requiredDeliverables: [DeliverableType!]!
+}
+
+input CriterionInput {
+  description: String!
+  isMandatory: Boolean! = true
+}
+
+input AgentRequirementsInput {
+  primary: AgentType!
+  supporting: [AgentType!]! = []
+  reviewers: [AgentType!]! = []
+}
+
+# Result Types for Agent Operations
+type InitiativePlanningResult {
+  success: Boolean!
+  planning: InitiativePlanning
+  operationId: String!
+  error: String
+}
+
+type InitiativeStrategyResult {
+  success: Boolean!
+  strategy: InitiativeStrategy  
+  operationId: String!
+  error: String
+}
+
+type InitiativeProgressResult {
+  success: Boolean!
+  progress: InitiativeProgress
+  operationId: String!
+  error: String
+}
+
+type InitiativeTasksResult {
+  success: Boolean!
+  tasks: [GeneratedTask!]!
+  operationId: String!
+  error: String
+}
+
+# Agent Operation Data Types
+type InitiativePlanning {
+  initiativeId: ID!
+  phases: [PlanningPhase!]!
+  resources: [ResourceRequirement!]!
+  timeline: [TimelineEvent!]!
+  risks: [Risk!]!
+  generatedAt: DateTime!
+}
+
+type InitiativeStrategy {
+  initiativeId: ID!
+  objectives: [StrategicObjective!]!
+  approaches: [StrategicApproach!]!
+  implementation: [ImplementationStep!]!
+  successCriteria: [SuccessCriterion!]!
+  generatedAt: DateTime!
+}
+
+type InitiativeProgress {
+  initiativeId: ID!
+  overallProgress: Float!
+  currentPhase: String!
+  completedMilestones: [Milestone!]!
+  upcomingMilestones: [Milestone!]!
+  blockers: [Blocker!]!
+  metrics: [ProgressMetric!]!
+  recommendations: [ProgressRecommendation!]!
+  updatedAt: DateTime!
+}
+
+type GeneratedTask {
+  id: ID!
+  title: String!
+  description: String!
+  priority: Priority!
+  estimatedHours: Float!
+  dependencies: [ID!]!
+  skills: [String!]!
+  phase: String!
+  createdAt: DateTime!
+}
+
+# Supporting Types for Agent Operations
+type PlanningPhase {
+  name: String!
+  description: String!
+  duration: String!
+  dependencies: [String!]!
+}
+
+type ResourceRequirement {
+  type: String!
+  description: String!
+  quantity: String!
+  when: String!
+}
+
+type TimelineEvent {
+  name: String!
+  date: DateTime!
+  description: String!
+}
+
+type Risk {
+  description: String!
+  impact: Severity!
+  probability: String!
+  mitigation: String!
+}
+
+type StrategicObjective {
+  description: String!
+  measurable: Boolean!
+  timeframe: String!
+}
+
+type StrategicApproach {
+  name: String!
+  description: String!
+  suitesInvolved: [SuiteType!]!
+}
+
+type ImplementationStep {
+  order: Int!
+  description: String!
+  owner: SuiteType!
+  duration: String!
+}
+
+type SuccessCriterion {
+  description: String!
+  metric: String!
+  target: String!
+}
+
+type Milestone {
+  name: String!
+  targetDate: DateTime!
+  status: StageStatus!
+}
+
+type Blocker {
+  description: String!
+  severity: Severity!
+  resolution: String!
+}
+
+type ProgressMetric {
+  name: String!
+  current: Float!
+  target: Float!
+  unit: String!
+}
+
+type ProgressRecommendation {
+  type: String!
+  description: String!
+  priority: Priority!
+}
+
+# Enums
+enum SuiteType {
+  PRODUCT
+  MARKETING  
+  DEVELOPMENT
+  OPERATIONS
+  STRATEGY
+  SALES
+}
+
+enum WorkspaceTier {
+  STARTER     # $15K/month - All 6 suites
+  GROWTH      # $30K/month - All 6 suites + advanced
+  ENTERPRISE  # $50K+/month - All 6 suites + custom
+}
+
+enum VisibilityLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum AgentType {
+  PERSONA_AGENT
+  JTBD_AGENT
+  RESEARCH_AGENT
+  ANALYSIS_AGENT
+  IDEATION_AGENT
+  PRIORITIZATION_AGENT
+  SEGMENTATION_AGENT
+  FINANCIAL_MODELING_AGENT
+  PRICING_AGENT
+  API_SPEC_AGENT
+  COMPONENT_AGENT
+  ARCHITECTURE_AGENT
+  TASK_PLANNING_AGENT
+  ESTIMATION_AGENT
+  OPTIMIZATION_AGENT
+  DEPENDENCY_AGENT
+  INITIATIVE_COORDINATOR
+  STRATEGY_AGENT
+  PROGRESS_TRACKER
+  TASK_GENERATOR
+}
+
+enum InitiativeStatus {
+  PLANNING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED  
+  CANCELLED
+}
+
+enum TaskStatus {
+  BACKLOG
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+  CANCELLED
+}
+
+enum AcceptanceCriterionStatus {
+  PENDING
+  SATISFIED
+  FAILED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+# Suite-Initiative Architecture Enums
+enum MetricCategory {
+  REVENUE
+  EFFICIENCY
+  QUALITY
+  CUSTOMER_SATISFACTION
+  MARKET_SHARE
+  COST_REDUCTION
+  TIME_TO_MARKET
+  USER_ENGAGEMENT
+}
+
+enum StageStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+  CANCELLED
+}
+
+enum DeliverableType {
+  PERSONA_SET
+  JOB_MAP
+  API_SPECIFICATION
+  COMPONENT_INVENTORY
+  BUSINESS_MODEL
+  MARKET_ANALYSIS
+  TECHNICAL_ARCHITECTURE
+  TEST_PLAN
+  DEPLOYMENT_GUIDE
+  PRD_DOCUMENT
+}
+
+enum DeliverableStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  APPROVED
+  REJECTED
+  NEEDS_REVISION
+}
+
+enum ValidationType {
+  STRUCTURAL
+  BUSINESS_RULE
+  CROSS_REFERENCE
+  SEMANTIC
+  COMPLETENESS
+}
+
+enum ValidationStatus {
+  PASSED
+  FAILED
+  WARNING
+  PENDING
+}
+
+enum TrendDirection {
+  UP
+  DOWN
+  STABLE
+  VOLATILE
+}
+
+enum RecommendationCategory {
+  OPTIMIZATION
+  RISK_MITIGATION
+  GROWTH_OPPORTUNITY
+  PROCESS_IMPROVEMENT
+  RESOURCE_ALLOCATION
+  STRATEGIC_ALIGNMENT
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RACIRole {
+  RESPONSIBLE
+  ACCOUNTABLE
+  CONSULTED
+  INFORMED
+}
+
+# TODO: Agent-specific types to be implemented in later prompts
+# type AgentProgress {
+#   operationId: ID!
+#   status: ProgressStatus!
+#   percentComplete: Float!
+#   currentStep: String
+#   estimatedCompletion: DateTime
+#   partialResults: JSON
+# }
+
+# type ChatInput {
+#   agentType: AgentType!
+#   contextNodeId: ID!
+#   message: String!
+#   sessionId: ID
+#   attachments: [Attachment!]
+# }
+
+# type ChatResponse {
+#   sessionId: ID!
+#   agentType: AgentType!
+#   message: String!
+#   suggestions: [ActionSuggestion!]
+#   artifacts: [Artifact!]
+#   requiresConfirmation: Boolean
+# }
+
+# enum AgentType {
+#   WORKSPACE
+#   SUITE
+#   INITIATIVE
+#   TASK
+#   GENERAL
+# }

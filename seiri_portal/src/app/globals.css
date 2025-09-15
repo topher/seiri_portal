@@ -2,32 +2,136 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-}
-
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+@layer base {
+  :root {
+    /* Seiri Studio Design System */
+    /* Primary palette - Deep trust blue */
+    --seiri-primary-50: 232 242 255;
+    --seiri-primary-100: 209 229 255;
+    --seiri-primary-500: 37 99 235;
+    --seiri-primary-600: 29 78 216;
+    --seiri-primary-900: 30 58 138;
+    
+    /* Accent - Teal */
+    --seiri-accent-500: 20 184 166;  /* teal-500 */
+    --seiri-accent-600: 13 148 136;  /* teal-600 */
+    
+    /* River turquoise - Active states */
+    --seiri-turquoise-50: 236 254 253;
+    --seiri-turquoise-100: 204 251 241;
+    --seiri-turquoise-200: 153 246 228;
+    --seiri-turquoise-300: 94 234 212;
+    --seiri-turquoise-400: 45 212 191;
+    --seiri-turquoise-500: 20 184 166;
+    --seiri-turquoise-600: 13 148 136;
+    --seiri-turquoise-700: 15 118 110;
+    --seiri-turquoise-800: 17 94 89;
+    
+    /* Semantic colors */
+    --seiri-success: 16 185 129;
+    --seiri-warning: 245 158 11;
+    --seiri-error: 239 68 68;
+    --seiri-info: 59 130 246;
+    
+    /* Neutral grays */
+    --seiri-gray-50: 249 250 251;
+    --seiri-gray-100: 243 244 246;
+    --seiri-gray-900: 17 24 39;
+    
+    /* Spacing system */
+    --space-xs: 0.5rem;
+    --space-sm: 0.75rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+    
+    /* Typography */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+    /* Original shadcn variables mapped to Seiri palette */
+    --background: 0 0% 100%;
+    --foreground: var(--seiri-gray-900);
+    --card: 0 0% 100%;
+    --card-foreground: var(--seiri-gray-900);
+    --popover: 0 0% 100%;
+    --popover-foreground: var(--seiri-gray-900);
+    --primary: var(--seiri-primary-600);
+    --primary-foreground: 0 0% 98%;
+    --secondary: var(--seiri-gray-100);
+    --secondary-foreground: var(--seiri-gray-900);
+    --muted: var(--seiri-gray-100);
+    --muted-foreground: 0 0% 45.1%;
+    --accent: var(--seiri-accent-500);
+    --accent-foreground: 0 0% 98%;
+    --destructive: var(--seiri-error);
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: var(--seiri-primary-600);
+    --chart-1: var(--seiri-primary-500);
+    --chart-2: var(--seiri-accent-500);
+    --chart-3: var(--seiri-success);
+    --chart-4: var(--seiri-warning);
+    --chart-5: var(--seiri-error);
+    --radius: 0.5rem;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::--webkit-scrollbar {
+  display: none;
 }
