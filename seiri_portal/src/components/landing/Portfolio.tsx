@@ -18,7 +18,7 @@ const Portfolio = () => {
         "Human-in-the-loop control",
         "Zero technical debt accumulation"
       ],
-      icon: <img src="/logo.png" alt="Seiri Portal" className="w-8 h-8" />,
+      icon: <img src="/logo.png" alt="Seiri Portal" className="w-16 h-16 object-contain" />,
       gradient: "from-pink-500 to-purple-500",
       link: "/projects/seiri-portal"
     },
@@ -32,7 +32,7 @@ const Portfolio = () => {
         "Zero-copy architecture",
         "Self-discovering connections"
       ],
-      icon: <img src="/images/myceliumql-logo.png" alt="MyceliumQL" className="w-8 h-8 rounded" />,
+      icon: <img src="/images/myceliumql-logo.png" alt="MyceliumQL" className="w-16 h-16 object-contain rounded-lg" />,
       gradient: "from-pink-600 to-purple-600",
       link: "/projects/myceliumql"
     },
@@ -46,7 +46,7 @@ const Portfolio = () => {
         "Real-time predictions",
         "Multi-state compliance"
       ],
-      icon: <TrendingUp className="w-8 h-8" />,
+      icon: <TrendingUp className="w-16 h-16" />,
       gradient: "from-pink-400 to-purple-400",
       link: "/projects/medpact"
     },
@@ -60,7 +60,7 @@ const Portfolio = () => {
         "Multi-language support",
         "AI skill matching"
       ],
-      icon: <img src="/images/tangoeje-logo.png" alt="TangoEje" className="w-8 h-8 rounded" />,
+      icon: <img src="/images/tangoeje-logo.png" alt="TangoEje" className="w-16 h-16 object-contain rounded-lg" />,
       gradient: "from-pink-300 to-purple-300",
       link: "/projects/tangoeje"
     },
@@ -74,7 +74,7 @@ const Portfolio = () => {
         "Club management system",
         "Athlete performance tracking"
       ],
-      icon: <img src="/images/garrochista-logo.png" alt="Garrochista" className="w-8 h-8 rounded" />,
+      icon: <img src="/images/garrochista-logo.png" alt="Garrochista" className="w-16 h-16 object-contain rounded-lg" />,
       gradient: "from-pink-700 to-purple-700",
       link: "/projects/garrochista"
     }
@@ -98,10 +98,10 @@ const Portfolio = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {projects.map((project, index) => (
             <Link key={index} href={project.link} className="block">
-              <Card className="bg-gray-800/50 border-gray-700 hover:border-gray-600 transition-all duration-300 hover:transform hover:scale-105 group cursor-pointer">
+              <Card className="bg-gray-800/50 border-gray-700 hover:border-gray-600 transition-all duration-300 hover:transform hover:scale-105 group cursor-pointer h-full hover:shadow-2xl hover:shadow-purple-500/20">
               <CardHeader>
-                <div className={`inline-flex w-fit p-3 rounded-lg bg-gradient-to-r ${project.gradient} mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                  <div className="text-white">
+                <div className={`flex items-center justify-center w-24 h-24 p-4 rounded-xl bg-gradient-to-r ${project.gradient} mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                  <div className="text-white flex items-center justify-center">
                     {project.icon}
                   </div>
                 </div>
