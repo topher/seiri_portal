@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd seiri_portal && npm run build",
+  "outputDirectory": "seiri_portal/.next",
+  "installCommand": "cd seiri_portal && npm install"
+}
