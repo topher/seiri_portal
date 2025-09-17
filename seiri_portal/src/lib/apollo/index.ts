@@ -22,15 +22,15 @@ export type {
   NormalizedCacheObject,
   TypedDocumentNode,
   OperationVariables,
-  ApolloError,
   DocumentNode,
 } from '@apollo/client';
 
+export { gql } from '@apollo/client';
+
 export {
-  gql,
   useQuery,
   useMutation,
   useSubscription,
   useLazyQuery,
-  useApolloClient as useApolloClientBase,
-} from '@apollo/client';
+  useApolloClient,
+} from '@apollo/client/react';

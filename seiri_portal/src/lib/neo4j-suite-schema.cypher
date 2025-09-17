@@ -103,14 +103,21 @@ FOR (a:Agent) ON (a.status);
 MATCH (w:Workspace)
 WHERE NOT EXISTS((w)-[:HAS_SUITE]->(:Suite))
 WITH w
-UNWIND ['PRODUCT', 'MARKETING', 'DEVELOPMENT', 'OPERATIONS', 'STRATEGY', 'SALES'] AS suiteType
+UNWIND [
+  {type: 'PRODUCT', name: 'Product', slug: 'product', description: 'Product development and management'},
+  {type: 'MARKETING', name: 'Marketing', slug: 'marketing', description: 'Marketing campaigns and brand management'},
+  {type: 'DEVELOPMENT', name: 'Coding', slug: 'coding', description: 'Software development and engineering'},
+  {type: 'OPERATIONS', name: 'Ops', slug: 'ops', description: 'Operations and infrastructure management'},
+  {type: 'STRATEGY', name: 'Strategy', slug: 'strategy', description: 'Strategic planning and business development'},
+  {type: 'SALES', name: 'Sales', slug: 'sales', description: 'Sales processes and customer acquisition'}
+] AS suiteInfo
 CREATE (s:Suite {
   id: randomUUID(),
-  type: suiteType,
+  name: suiteInfo.name,
+  description: suiteInfo.description,
+  slug: suiteInfo.slug,
   workspaceId: w.id,
-  name: suiteType + ' Suite',
-  description: 'Default ' + suiteType + ' suite for workspace',
-  capabilities: [],
+  isActive: true,
   createdAt: datetime(),
   updatedAt: datetime()
 })

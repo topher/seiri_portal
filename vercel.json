@@ -1,5 +1,66 @@
 {
   "buildCommand": "cd seiri_portal && npm run build",
   "outputDirectory": "seiri_portal/.next",
-  "installCommand": "cd seiri_portal && npm install"
+  "installCommand": "cd seiri_portal && npm install --legacy-peer-deps",
+  "devCommand": "cd seiri_portal && npm run dev",
+
+  "build": {
+    "env": {
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
+
+  "functions": {
+    "seiri_portal/src/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    }
+  ],
+
+  "redirects": [
+    {
+      "source": "/dashboard",
+      "destination": "/",
+      "permanent": false
+    }
+  ]
 }

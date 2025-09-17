@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useApolloClient, gql } from '@apollo/client';
+import { useMutation, useApolloClient } from '@apollo/client/react'; import { gql } from '@apollo/client';
 import { useCallback, useState } from 'react';
 import { 
   GENERATE_WORKSPACE_INSIGHTS,
@@ -10,6 +10,7 @@ import {
 } from '@/lib/apollo/mutations';
 import { useWorkspaceRealtime } from '@/lib/apollo/realtime';
 import { optimisticUpdates, cacheInvalidationPatterns } from '@/lib/apollo/cache-policies';
+import type { GenerateWorkspaceInsightsResponse } from '@/types/graphql';
 
 // Types
 interface WorkspaceInsightsState {
@@ -78,10 +79,10 @@ export function useWorkspaceInsights(
   const { latestInsights } = useWorkspaceRealtime(enableRealtime ? workspaceId : '');
 
   // Generate insights mutation
-  const [generateInsightsMutation] = useMutation(GENERATE_WORKSPACE_INSIGHTS, {
+  const [generateInsightsMutation] = useMutation<GenerateWorkspaceInsightsResponse>(GENERATE_WORKSPACE_INSIGHTS, {
     onCompleted: (data) => {
-      const result = data.generateWorkspaceInsights;
-      if (result.success) {
+      const result = data?.generateWorkspaceInsights;
+      if (result?.success) {
         setState(prev => ({
           ...prev,
           insights: result.insights,
@@ -120,7 +121,7 @@ export function useWorkspaceInsights(
   // Optimize workspace mutation
   const [optimizeWorkspaceMutation] = useMutation(OPTIMIZE_WORKSPACE, {
     onCompleted: (data) => {
-      const result = data.optimizeWorkspace;
+      const result = (data as any).optimizeWorkspace;
       if (result.success) {
         setState(prev => ({
           ...prev,
@@ -149,7 +150,7 @@ export function useWorkspaceInsights(
   // Generate strategy mutation
   const [generateStrategyMutation] = useMutation(GENERATE_WORKSPACE_STRATEGY, {
     onCompleted: (data) => {
-      const result = data.generateWorkspaceStrategy;
+      const result = (data as any).generateWorkspaceStrategy;
       if (result.success) {
         setState(prev => ({
           ...prev,
@@ -178,7 +179,7 @@ export function useWorkspaceInsights(
   // Health check mutation
   const [performHealthCheckMutation] = useMutation(PERFORM_WORKSPACE_HEALTH_CHECK, {
     onCompleted: (data) => {
-      const result = data.performWorkspaceHealthCheck;
+      const result = (data as any).performWorkspaceHealthCheck;
       if (result.success) {
         setState(prev => ({
           ...prev,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from 'react';
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 import { toast } from 'sonner';
 import { 
   GENERATE_WORKSPACE_INSIGHTS,
@@ -42,19 +42,19 @@ export function useAiActions(options: UseAiActionsOptions = {}) {
   const [suggestions, setSuggestions] = useState<AiSuggestion[]>([]);
 
   // GraphQL mutations
-  const [generateWorkspaceInsights] = useMutation(GENERATE_WORKSPACE_INSIGHTS);
-  const [optimizeWorkspace] = useMutation(OPTIMIZE_WORKSPACE);
-  const [generateWorkspaceStrategy] = useMutation(GENERATE_WORKSPACE_STRATEGY);
-  const [performWorkspaceHealthCheck] = useMutation(PERFORM_WORKSPACE_HEALTH_CHECK);
-  const [generateTaskBreakdown] = useMutation(GENERATE_TASK_BREAKDOWN);
-  const [estimateTaskEffort] = useMutation(ESTIMATE_TASK_EFFORT);
-  const [optimizeTask] = useMutation(OPTIMIZE_TASK);
-  const [analyzeTaskDependencies] = useMutation(ANALYZE_TASK_DEPENDENCIES);
-  const [autoGenerateSubtasks] = useMutation(AUTO_GENERATE_SUBTASKS);
-  const [generateInitiativePlanning] = useMutation(GENERATE_INITIATIVE_PLANNING);
-  const [generateInitiativeStrategy] = useMutation(GENERATE_INITIATIVE_STRATEGY);
-  const [trackInitiativeProgress] = useMutation(TRACK_INITIATIVE_PROGRESS);
-  const [autoGenerateInitiativeTasks] = useMutation(AUTO_GENERATE_INITIATIVE_TASKS);
+  const [generateWorkspaceInsights] = useMutation<{ generateWorkspaceInsights: any }>(GENERATE_WORKSPACE_INSIGHTS);
+  const [optimizeWorkspace] = useMutation<{ optimizeWorkspace: any }>(OPTIMIZE_WORKSPACE);
+  const [generateWorkspaceStrategy] = useMutation<{ generateWorkspaceStrategy: any }>(GENERATE_WORKSPACE_STRATEGY);
+  const [performWorkspaceHealthCheck] = useMutation<{ performWorkspaceHealthCheck: any }>(PERFORM_WORKSPACE_HEALTH_CHECK);
+  const [generateTaskBreakdown] = useMutation<{ generateTaskBreakdown: any }>(GENERATE_TASK_BREAKDOWN);
+  const [estimateTaskEffort] = useMutation<{ estimateTaskEffort: any }>(ESTIMATE_TASK_EFFORT);
+  const [optimizeTask] = useMutation<{ optimizeTask: any }>(OPTIMIZE_TASK);
+  const [analyzeTaskDependencies] = useMutation<{ analyzeTaskDependencies: any }>(ANALYZE_TASK_DEPENDENCIES);
+  const [autoGenerateSubtasks] = useMutation<{ autoGenerateSubtasks: any }>(AUTO_GENERATE_SUBTASKS);
+  const [generateInitiativePlanning] = useMutation<{ generateInitiativePlanning: any }>(GENERATE_INITIATIVE_PLANNING);
+  const [generateInitiativeStrategy] = useMutation<{ generateInitiativeStrategy: any }>(GENERATE_INITIATIVE_STRATEGY);
+  const [trackInitiativeProgress] = useMutation<{ trackInitiativeProgress: any }>(TRACK_INITIATIVE_PROGRESS);
+  const [autoGenerateInitiativeTasks] = useMutation<{ autoGenerateInitiativeTasks: any }>(AUTO_GENERATE_INITIATIVE_TASKS);
 
   const setActionLoading = useCallback((actionId: string, loading: boolean) => {
     setLoadingActions(prev => {

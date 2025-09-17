@@ -48,11 +48,9 @@ export const resolvers = {
       }
 
       const query = `
-        MATCH (user:User {id: $userId})
-        MATCH (user)-[:BELONGS_TO]->(member:WorkspaceMember)
-        MATCH (member)-[:MEMBER_OF]->(workspace:WORKSPACE)
+        MATCH (user:User {clerkId: $userId})-[:MEMBER_OF]->(workspace:Workspace)
         RETURN workspace
-        ORDER BY workspace.name
+        ORDER BY workspace.createdAt DESC
       `;
       
       const results = await runQuery(query, { userId: context.userId });
@@ -65,8 +63,7 @@ export const resolvers = {
       }
 
       const query = `
-        MATCH (workspace:WORKSPACE {id: $id})
-        MATCH (workspace)-[:HAS_MEMBER]->(member:WorkspaceMember)-[:BELONGS_TO]->(user:User {id: $userId})
+        MATCH (user:User {clerkId: $userId})-[:MEMBER_OF]->(workspace:Workspace {id: $id})
         RETURN workspace
       `;
       
@@ -80,9 +77,7 @@ export const resolvers = {
       }
 
       const query = `
-        MATCH (suite:SUITE {id: $id})
-        MATCH (workspace:WORKSPACE)-[:CONTAINS]->(suite)
-        MATCH (workspace)-[:HAS_MEMBER]->(member:WorkspaceMember)-[:BELONGS_TO]->(user:User {id: $userId})
+        MATCH (user:User {clerkId: $userId})-[:MEMBER_OF]->(workspace:Workspace)-[:HAS_SUITE]->(suite:Suite {id: $id})
         RETURN suite
       `;
       
@@ -96,9 +91,7 @@ export const resolvers = {
       }
 
       const query = `
-        MATCH (initiative:INITIATIVE {id: $id})
-        MATCH (workspace:WORKSPACE)-[:CONTAINS*]->(initiative)
-        MATCH (workspace)-[:HAS_MEMBER]->(member:WorkspaceMember)-[:BELONGS_TO]->(user:User {id: $userId})
+        MATCH (user:User {clerkId: $userId})-[:MEMBER_OF]->(workspace:Workspace)-[:HAS_INITIATIVE]->(initiative:Initiative {id: $id})
         RETURN initiative
       `;
       
@@ -112,9 +105,8 @@ export const resolvers = {
       }
 
       const query = `
-        MATCH (task:TASK {id: $id})
-        MATCH (workspace:WORKSPACE)-[:CONTAINS*]->(task)
-        MATCH (workspace)-[:HAS_MEMBER]->(member:WorkspaceMember)-[:BELONGS_TO]->(user:User {id: $userId})
+        MATCH (user:User {clerkId: $userId})-[:MEMBER_OF]->(workspace:Workspace)
+        MATCH (workspace)-[:HAS_INITIATIVE]->(initiative:Initiative)-[:HAS]->(task:Task {id: $id})
         RETURN task
       `;
       
@@ -128,9 +120,8 @@ export const resolvers = {
       }
 
       const query = `
-        MATCH (ac:ACCEPTANCE_CRITERION {id: $id})
-        MATCH (workspace:WORKSPACE)-[:CONTAINS*]->(ac)
-        MATCH (workspace)-[:HAS_MEMBER]->(member:WorkspaceMember)-[:BELONGS_TO]->(user:User {id: $userId})
+        MATCH (user:User {clerkId: $userId})-[:MEMBER_OF]->(workspace:Workspace)
+        MATCH (workspace)-[:HAS_INITIATIVE]->(initiative:Initiative)-[:HAS]->(task:Task)-[:HAS]->(ac:AcceptanceCriterion {id: $id})
         RETURN ac
       `;
       
@@ -151,11 +142,9 @@ export const resolvers = {
   User: {
     workspaces: async (parent: any, _: any, context: GraphQLContext) => {
       const query = `
-        MATCH (user:User {id: $userId})
-        MATCH (user)-[:BELONGS_TO]->(member:WorkspaceMember)
-        MATCH (member)-[:MEMBER_OF]->(workspace:WORKSPACE)
+        MATCH (user:User {id: $userId})-[:MEMBER_OF]->(workspace:Workspace)
         RETURN workspace
-        ORDER BY workspace.name
+        ORDER BY workspace.createdAt DESC
       `;
       
       const results = await runQuery(query, { userId: parent.id });
@@ -166,8 +155,7 @@ export const resolvers = {
   Workspace: {
     suites: async (parent: any) => {
       const query = `
-        MATCH (workspace:WORKSPACE {id: $workspaceId})
-        MATCH (workspace)-[:CONTAINS]->(suite:SUITE)
+        MATCH (workspace:Workspace {id: $workspaceId})-[:HAS_SUITE]->(suite:Suite)
         RETURN suite
         ORDER BY suite.name
       `;
@@ -178,10 +166,9 @@ export const resolvers = {
 
     initiatives: async (parent: any) => {
       const query = `
-        MATCH (workspace:WORKSPACE {id: $workspaceId})
-        MATCH (workspace)-[:CONTAINS]->(initiative:INITIATIVE)
+        MATCH (workspace:Workspace {id: $workspaceId})-[:HAS_INITIATIVE]->(initiative:Initiative)
         RETURN initiative
-        ORDER BY initiative.name
+        ORDER BY initiative.createdAt DESC
       `;
       
       const results = await runQuery(query, { workspaceId: parent.id });
@@ -190,18 +177,18 @@ export const resolvers = {
 
     members: async (parent: any) => {
       const query = `
-        MATCH (workspace:WORKSPACE {id: $workspaceId})
-        MATCH (workspace)-[:HAS_MEMBER]->(member:WorkspaceMember)
-        MATCH (member)-[:BELONGS_TO]->(user:User)
-        RETURN member, user
+        MATCH (workspace:Workspace {id: $workspaceId})<-[:MEMBER_OF]-(user:User)
+        RETURN user
         ORDER BY user.name
       `;
       
       const results = await runQuery(query, { workspaceId: parent.id });
       return results.map(r => ({
-        ...r.member,
+        id: `member_${r.user.id}_${parent.id}`,
+        role: 'MEMBER',
         user: r.user,
-        workspace: parent
+        workspace: parent,
+        createdAt: r.user.createdAt
       }));
     }
   },
@@ -209,8 +196,7 @@ export const resolvers = {
   Suite: {
     workspace: async (parent: any) => {
       const query = `
-        MATCH (suite:SUITE {id: $suiteId})
-        MATCH (workspace:WORKSPACE)-[:CONTAINS]->(suite)
+        MATCH (workspace:Workspace)-[:HAS_SUITE]->(suite:Suite {id: $suiteId})
         RETURN workspace
       `;
       
@@ -220,10 +206,9 @@ export const resolvers = {
 
     initiatives: async (parent: any) => {
       const query = `
-        MATCH (suite:SUITE {id: $suiteId})
-        MATCH (suite)-[:CONTAINS]->(initiative:INITIATIVE)
+        MATCH (initiative:Initiative {suiteId: $suiteId})
         RETURN initiative
-        ORDER BY initiative.name
+        ORDER BY initiative.createdAt DESC
       `;
       
       const results = await runQuery(query, { suiteId: parent.id });
@@ -234,8 +219,7 @@ export const resolvers = {
   Initiative: {
     workspace: async (parent: any) => {
       const query = `
-        MATCH (initiative:INITIATIVE {id: $initiativeId})
-        MATCH (workspace:WORKSPACE)-[:CONTAINS*]->(initiative)
+        MATCH (workspace:Workspace)-[:HAS_INITIATIVE]->(initiative:Initiative {id: $initiativeId})
         RETURN workspace
       `;
       
@@ -245,19 +229,17 @@ export const resolvers = {
 
     suite: async (parent: any) => {
       const query = `
-        MATCH (initiative:INITIATIVE {id: $initiativeId})
-        OPTIONAL MATCH (suite:SUITE)-[:CONTAINS]->(initiative)
+        MATCH (suite:Suite {id: $suiteId})
         RETURN suite
       `;
       
-      const result = await runSingleQuery(query, { initiativeId: parent.id });
+      const result = await runSingleQuery(query, { suiteId: parent.suiteId });
       return result?.suite;
     },
 
     tasks: async (parent: any) => {
       const query = `
-        MATCH (initiative:INITIATIVE {id: $initiativeId})
-        MATCH (initiative)-[:HAS]->(task:TASK)
+        MATCH (initiative:Initiative {id: $initiativeId})-[:HAS]->(task:Task)
         RETURN task
         ORDER BY task.priority DESC, task.createdAt
       `;
@@ -270,8 +252,7 @@ export const resolvers = {
   Task: {
     initiative: async (parent: any) => {
       const query = `
-        MATCH (task:TASK {id: $taskId})
-        MATCH (initiative:INITIATIVE)-[:HAS]->(task)
+        MATCH (initiative:Initiative)-[:HAS]->(task:Task {id: $taskId})
         RETURN initiative
       `;
       
@@ -281,7 +262,7 @@ export const resolvers = {
 
     assignee: async (parent: any) => {
       const query = `
-        MATCH (task:TASK {id: $taskId})
+        MATCH (task:Task {id: $taskId})
         OPTIONAL MATCH (task)-[:ASSIGNED_TO]->(user:User)
         RETURN user
       `;
@@ -292,10 +273,9 @@ export const resolvers = {
 
     acceptanceCriteria: async (parent: any) => {
       const query = `
-        MATCH (task:TASK {id: $taskId})
-        MATCH (task)-[:HAS]->(ac:ACCEPTANCE_CRITERION)
+        MATCH (task:Task {id: $taskId})-[:HAS]->(ac:AcceptanceCriterion)
         RETURN ac
-        ORDER BY ac.createdAt
+        ORDER BY ac.order
       `;
       
       const results = await runQuery(query, { taskId: parent.id });
@@ -306,8 +286,7 @@ export const resolvers = {
   AcceptanceCriterion: {
     task: async (parent: any) => {
       const query = `
-        MATCH (ac:ACCEPTANCE_CRITERION {id: $acId})
-        MATCH (task:TASK)-[:HAS]->(ac)
+        MATCH (task:Task)-[:HAS]->(ac:AcceptanceCriterion {id: $acId})
         RETURN task
       `;
       

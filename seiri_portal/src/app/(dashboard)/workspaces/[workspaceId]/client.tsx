@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+// @ts-ignore - date-fns v4 compatibility
 import { formatDistanceToNow } from "date-fns";
 import { CalendarIcon, PlusIcon, SettingsIcon, PowerIcon } from "lucide-react";
 

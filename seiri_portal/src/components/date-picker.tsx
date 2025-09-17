@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/popover";
 
 interface DatePickerProps {
-  value: Date | undefined;
-  onChange: (date: Date) => void;
+  value?: Date;
+  onChange: (date: Date | undefined) => void;
   className?: string;
   placeholder?: string;
 };
@@ -41,7 +41,7 @@ export const DatePicker = ({ value, onChange, className, placeholder = "Select d
         <Calendar
           mode="single"
           selected={value}
-          onSelect={(date) => onChange(date as Date)}
+          onSelect={onChange}
           initialFocus
         />
       </PopoverContent>

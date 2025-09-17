@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useApolloClient } from '@apollo/client';
+import { useApolloClient } from '@apollo/client/react';
 
 // Types
 interface LoadingState {

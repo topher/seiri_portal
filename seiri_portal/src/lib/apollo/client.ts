@@ -3,6 +3,7 @@
 import { ApolloClient, InMemoryCache, createHttpLink, from, split } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
+import type { GraphQLError } from 'graphql';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { getMainDefinition } from '@apollo/client/utilities';
 import { createClient } from 'graphql-ws';
@@ -54,20 +55,12 @@ const authLink = setContext(async (_, { headers }) => {
 });
 
 // Error Link
-const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
-  if (graphQLErrors) {
-    graphQLErrors.forEach(({ message, locations, path }) => {
-      console.error(
-        `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
-      );
-    });
-  }
-
-  if (networkError) {
-    console.error(`[Network error]: ${networkError}`);
+const errorLink = onError(({ error }) => {
+  if (error) {
+    console.error(`[Error]: ${error.message || error}`);
     
-    // Handle auth errors
-    if ('statusCode' in networkError && networkError.statusCode === 401) {
+    // Handle auth errors - check if it's a network error with 401 status
+    if (error && typeof error === 'object' && 'statusCode' in error && (error as any).statusCode === 401) {
       // Clear any stored auth tokens
       if (typeof window !== 'undefined') {
         localStorage.removeItem('clerk-token');
@@ -99,9 +92,27 @@ const cache = new InMemoryCache({
       fields: {
         // Agent discovery caching
         discoverAgents: {
-          keyArgs: ['contextNodeId', 'contextNodeType', 'operation'],
+          keyArgs: ['capabilities', 'enabled'],
           merge(existing = [], incoming) {
             return incoming;
+          },
+        },
+        // Agent analytics caching  
+        getAgentAnalytics: {
+          keyArgs: ['agentId', 'timeRange'],
+          merge(existing, incoming) {
+            return incoming;
+          },
+        },
+        // Agent operation history
+        getAgentOperationHistory: {
+          keyArgs: ['agentId', 'limit', 'offset'],
+          merge(existing, incoming) {
+            if (!existing) return incoming;
+            return {
+              ...incoming,
+              operations: [...(existing.operations || []), ...(incoming.operations || [])],
+            };
           },
         },
         // Agent interactions caching
@@ -130,6 +141,36 @@ const cache = new InMemoryCache({
         },
       },
     },
+    Mutation: {
+      fields: {
+        // Agent operation mutations
+        generateTaskBreakdown: {
+          merge(existing, incoming) {
+            return incoming;
+          },
+        },
+        trackTaskProgress: {
+          merge(existing, incoming) {
+            return incoming;
+          },
+        },
+        autoGenerateSubtasks: {
+          merge(existing, incoming) {
+            return incoming;
+          },
+        },
+        generateWorkspaceInsights: {
+          merge(existing, incoming) {
+            return incoming;
+          },
+        },
+        executeAgentOperation: {
+          merge(existing, incoming) {
+            return incoming;
+          },
+        },
+      },
+    },
     Agent: {
       keyFields: ['name'],
     },
@@ -145,6 +186,41 @@ const cache = new InMemoryCache({
     },
     TaskBreakdownResult: {
       keyFields: false,
+    },
+    Subscription: {
+      fields: {
+        // Real-time subscriptions
+        agentOperationProgress: {
+          merge(existing, incoming) {
+            return incoming;
+          },
+        },
+        agentOperationCompleted: {
+          merge(existing, incoming) {
+            return incoming;
+          },
+        },
+        workspaceInsightsUpdated: {
+          merge(existing, incoming) {
+            return incoming;
+          },
+        },
+        taskBreakdownUpdated: {
+          merge(existing, incoming) {
+            return incoming;
+          },
+        },
+        taskProgressUpdated: {
+          merge(existing, incoming) {
+            return incoming;
+          },
+        },
+        agentStatusChanged: {
+          merge(existing, incoming) {
+            return incoming;
+          },
+        },
+      },
     },
   },
 });
@@ -165,7 +241,6 @@ export const apolloClient = new ApolloClient({
       errorPolicy: 'all',
     },
   },
-  connectToDevTools: process.env.NODE_ENV === 'development',
 });
 
 // Helper function to update auth token

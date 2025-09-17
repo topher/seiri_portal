@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { useMutation, useQuery } from '@apollo/client';
-import { gql } from 'graphql-tag';
+import { useMutation, useQuery } from '@apollo/client/react';
+import { gql } from '@apollo/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,7 +26,7 @@ import {
   AlertTriangle,
   Signature
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format } from 'date-fns/format';
 import { toast } from 'sonner';
 
 // GraphQL Queries and Mutations
@@ -197,6 +197,31 @@ const agreementSchema = z.object({
 
 type AgreementForm = z.infer<typeof agreementSchema>;
 
+// BookingConfirmation data interfaces
+interface BookingOffer {
+  id: string;
+  status: string;
+  agreement?: BookingAgreement;
+  [key: string]: any;
+}
+
+interface BookingAgreement {
+  id: string;
+  name: string;
+  description: string;
+  terms: string;
+  status: string;
+  [key: string]: any;
+}
+
+interface OffersData {
+  offers: BookingOffer[];
+}
+
+interface AgreementData {
+  agreement: BookingAgreement;
+}
+
 interface BookingConfirmationProps {
   workspaceId: string;
   currentUserId: string;
@@ -210,16 +235,16 @@ export function BookingConfirmation({
   offerId,
   agreementId 
 }: BookingConfirmationProps) {
-  const [selectedOffer, setSelectedOffer] = useState<any>(null);
+  const [selectedOffer, setSelectedOffer] = useState<BookingOffer | null>(null);
   const [showSignatureConfirm, setShowSignatureConfirm] = useState(false);
 
   // Queries
-  const { data: offersData, loading: offersLoading, refetch: refetchOffers } = useQuery(GET_ACCEPTED_OFFERS, {
+  const { data: offersData, loading: offersLoading, refetch: refetchOffers } = useQuery<OffersData>(GET_ACCEPTED_OFFERS, {
     variables: { workspaceId, receiverId: currentUserId },
     skip: !!agreementId,
   });
 
-  const { data: agreementData, loading: agreementLoading, refetch: refetchAgreement } = useQuery(GET_AGREEMENT_DETAILS, {
+  const { data: agreementData, loading: agreementLoading, refetch: refetchAgreement } = useQuery<AgreementData>(GET_AGREEMENT_DETAILS, {
     variables: { id: agreementId! },
     skip: !agreementId,
   });
@@ -258,7 +283,7 @@ export function BookingConfirmation({
 
   // Memoized data
   const acceptedOffers = useMemo(() => 
-    offersData?.offers?.filter((offer: any) => 
+    offersData?.offers?.filter((offer) => 
       offer.status === 'ACCEPTED' && !offer.agreement
     ) || [],
     [offersData]
@@ -524,17 +549,18 @@ export function BookingConfirmation({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Booking Confirmation
+            Wine Reservations
           </CardTitle>
           <CardDescription>
-            Finalize accepted offers into binding agreements using the ValueFlows pattern.
+            Review and finalize your wine reservation agreements. Create service agreements for confirmed reservations.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {acceptedOffers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              No accepted offers waiting for agreement
+              <div className="text-lg font-medium mb-2">No reservations found</div>
+              <div className="text-sm">Your wine reservations will appear here once confirmed</div>
             </div>
           ) : (
             <div className="space-y-4">
@@ -559,7 +585,10 @@ export function BookingConfirmation({
                             {offer.resource?.identifier || offer.intent.resourceSpecification.name}
                           </div>
                           <div className="text-muted-foreground">
-                            Qty: {offer.resourceQuantity}
+                            {offer.wineReservation ? 
+                              `${offer.wineReservation.wines.length} bottles` : 
+                              `Qty: ${offer.resourceQuantity}`
+                            }
                           </div>
                         </div>
                       </div>
@@ -568,10 +597,16 @@ export function BookingConfirmation({
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <div className="font-medium">
-                            {format(new Date(offer.startTime), "MMM dd")} - {format(new Date(offer.endTime), "MMM dd")}
+                            {offer.wineReservation ?
+                              format(new Date(offer.startTime), "MMM dd 'at' HH:mm") :
+                              `${format(new Date(offer.startTime), "MMM dd")} - ${format(new Date(offer.endTime), "MMM dd")}`
+                            }
                           </div>
                           <div className="text-muted-foreground">
-                            {calculateDuration(offer.startTime, offer.endTime)} days
+                            {offer.wineReservation ?
+                              `Party of ${offer.wineReservation.wines.reduce((total: number, wine: any) => total + wine.quantity, 0)}` :
+                              `${calculateDuration(offer.startTime, offer.endTime)} days`
+                            }
                           </div>
                         </div>
                       </div>
@@ -580,14 +615,39 @@ export function BookingConfirmation({
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <div className="font-medium">
-                            {offer.price ? `${offer.currency} ${offer.price}` : "Free"}
+                            {offer.price ? `$${offer.price}` : "Free"}
                           </div>
                           <div className="text-muted-foreground text-xs">
-                            Total cost
+                            {offer.wineReservation ? "Wine service total" : "Total cost"}
                           </div>
                         </div>
                       </div>
                     </div>
+
+                    {/* Wine-specific details */}
+                    {offer.wineReservation && (
+                      <div className="mt-4 p-3 bg-slate-50 rounded-lg border">
+                        <h5 className="font-medium text-sm mb-2 text-slate-700">Wine Selection</h5>
+                        <div className="space-y-2">
+                          {offer.wineReservation.wines.map((wine: any, index: number) => (
+                            <div key={wine.id} className="flex justify-between items-start text-xs">
+                              <div className="flex-1">
+                                <div className="font-medium text-slate-800">{wine.name}</div>
+                                <div className="text-slate-600">{wine.producer} • {wine.region}</div>
+                              </div>
+                              <div className="text-right ml-2">
+                                <div className="font-medium">${wine.price}</div>
+                                <div className="text-slate-500">Qty: {wine.quantity}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-3 pt-2 border-t border-slate-200 flex justify-between text-xs">
+                          <span className="text-slate-600">Confirmation: {offer.wineReservation.confirmationNumber}</span>
+                          <span className="font-medium text-slate-800">Total: ${offer.price}</span>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="flex justify-between items-center pt-3 border-t">
                       <div className="text-xs text-muted-foreground">

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { useMutation, useQuery } from '@apollo/client';
-import { gql } from 'graphql-tag';
+import { useMutation, useQuery } from '@apollo/client/react';
+import { gql } from '@apollo/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -30,7 +30,7 @@ import {
   ArrowRight,
   Timer
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format } from 'date-fns/format';
 import { toast } from 'sonner';
 
 // GraphQL Queries and Mutations
@@ -191,7 +191,9 @@ export function PickupReturn({
   const [showFulfillmentForm, setShowFulfillmentForm] = useState(false);
 
   // Queries
-  const { data: agreementsData, loading: agreementsLoading, refetch: refetchAgreements } = useQuery(GET_ACTIVE_AGREEMENTS, {
+  const { data: agreementsData, loading: agreementsLoading, refetch: refetchAgreements } = useQuery<{
+    agreements: any[];
+  }>(GET_ACTIVE_AGREEMENTS, {
     variables: { workspaceId, userId: currentUserId },
   });
 

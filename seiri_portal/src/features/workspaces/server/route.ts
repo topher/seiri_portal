@@ -2,7 +2,8 @@ import { z } from "zod";
 import { Hono } from "hono";
 import { randomUUID } from "crypto";
 import { zValidator } from "@hono/zod-validator";
-import { endOfMonth, startOfMonth, subMonths } from "date-fns";
+// @ts-ignore
+import { subMonths, startOfMonth, endOfMonth } from "date-fns";
 
 import { Query } from "@/lib/query-utils";
 import { getMember } from "@/features/members/utils";

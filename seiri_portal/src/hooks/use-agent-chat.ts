@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 // Temporarily disabled Apollo Client - need to configure properly
-// import { useMutation, useQuery } from '@apollo/client';
-// import { gql } from '@apollo/client';
+// import { useMutation, useQuery } from '@/lib/apollo';
+// import { gql } from '@/lib/apollo';
 import { useChatStore, ChatMessage, ChatAttachment } from '@/hooks/use-chat-state';
 import { useAgentBase } from '@/hooks/agents';
 // Apollo mutations temporarily disabled
@@ -24,6 +24,31 @@ import { useAgentBase } from '@/hooks/agents';
 // const DISCOVER_AGENTS_FOR_CONTEXT = gql`...`;
 // const GET_AGENT_INTERACTION_HISTORY = gql`...`;
 
+// Agent interfaces
+interface Agent {
+  name: string;
+  type: string;
+  displayName?: string;
+  description?: string;
+  capabilities?: string[];
+  isAvailable?: boolean;
+}
+
+interface AgentResponseMetadata {
+  tokenCount?: number;
+  duration?: number;
+  cached?: boolean;
+  confidence?: number;
+}
+
+interface AgentResponse {
+  success: boolean;
+  response?: string;
+  error?: string;
+  operationId?: string;
+  metadata?: AgentResponseMetadata;
+}
+
 // Hook options interface
 interface UseAgentChatOptions {
   contextNodeId?: string;
@@ -38,7 +63,7 @@ interface UseAgentChatOptions {
 interface UseAgentChatReturn {
   // Chat state
   isOpen: boolean;
-  currentConversation: any;
+  currentConversation: any; // TODO: Define proper conversation type
   messages: ChatMessage[];
   isTyping: boolean;
   
@@ -47,12 +72,12 @@ interface UseAgentChatReturn {
   attachments: ChatAttachment[];
   
   // Agent state
-  availableAgents: any[];
-  selectedAgent: any;
+  availableAgents: Agent[];
+  selectedAgent: Agent | null;
   
   // Actions
   sendMessage: (message: string, attachments?: ChatAttachment[]) => Promise<void>;
-  sendQuickAction: (actionType: string, params?: any) => Promise<void>;
+  sendQuickAction: (actionType: string, params?: Record<string, unknown>) => Promise<void>;
   toggleSidebar: () => void;
   selectAgent: (agentName: string) => void;
   
@@ -201,8 +226,8 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       // Determine which agent operation to use based on message content and context
       const operationType = determineOperationType(message, contextNodeType, selectedAgentName);
       
-      let response;
-      let agentResponse;
+      let response: any; // TODO: Type GraphQL response properly
+      let agentResponse: AgentResponse;
 
       // Execute appropriate agent operation
       switch (operationType) {
@@ -385,7 +410,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
     setError(null);
   }, []);
 
-  const selectedAgent = availableAgents.find(agent => agent.name === selectedAgentName);
+  const selectedAgent: Agent | null = availableAgents.find(agent => agent.name === selectedAgentName) ?? null;
 
   return {
     // Chat state

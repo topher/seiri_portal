@@ -4,10 +4,10 @@ import { TaskStatus } from "./types";
 
 export const createTaskSchema = z.object({
   name: z.string().trim().min(1, "Required"),
-  status: z.nativeEnum(TaskStatus, { required_error: "Required" }),
+  status: z.nativeEnum(TaskStatus, { message: "Required" }),
   workspaceId: z.string().trim().min(1, "Required"),
   initiativeId: z.string().trim().min(1, "Required"),
-  dueDate: z.coerce.date().optional(),
+  dueDate: z.date().optional(),
   assigneeId: z.string().trim().min(1, "Required").optional(),
   description: z.string().optional(),
 });
@@ -17,7 +17,7 @@ export const updateTaskSchema = z.object({
   status: z.nativeEnum(TaskStatus).optional(),
   assigneeId: z.string().optional(),
   initiativeId: z.string().optional(),
-  dueDate: z.coerce.date().optional(),
+  dueDate: z.date().optional(),
   description: z.string().optional(),
   position: z.number().optional(),
 });

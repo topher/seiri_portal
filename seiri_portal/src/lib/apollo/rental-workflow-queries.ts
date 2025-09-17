@@ -1,4 +1,4 @@
-import { gql } from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 // Fragment definitions for reusable GraphQL fragments
 export const AGENT_FRAGMENT = gql`

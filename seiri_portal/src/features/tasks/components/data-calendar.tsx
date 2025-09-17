@@ -11,13 +11,13 @@ import {
   subMonths,
 } from "date-fns";
 import { enUS } from "date-fns/locale";
-import { Calendar, dateFnsLocalizer } from "react-big-calendar";
+import { Calendar, dateFnsLocalizer, Event as BigCalendarEvent } from "react-big-calendar";
 
 import { Button } from "@/components/ui/button";
 
 import { EventCard } from "./event-card";
 
-import { Task } from "../types";
+import { Task, TaskStatus } from "../types";
 
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./data-calendar.css";
@@ -33,6 +33,16 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales
 });
+
+interface TaskEvent extends BigCalendarEvent {
+  title: string;
+  start: Date;
+  end: Date;
+  id: string;
+  initiative: any;
+  assignee: any;
+  status: TaskStatus;
+}
 
 interface DataCalendarProps {
   data: Task[];
@@ -75,7 +85,7 @@ export const DataCalendar = ({
     data.length > 0 && data[0].dueDate ? new Date(data[0].dueDate) : new Date()
   );
 
-  const events = data
+  const events: TaskEvent[] = data
     .filter((task) => task.dueDate)
     .map((task) => ({
       start: new Date(task.dueDate!),
@@ -112,12 +122,12 @@ export const DataCalendar = ({
         weekdayFormat: (date, culture, localizer) => localizer?.format(date, "EEE", culture) ?? ""
       }}
       components={{
-        eventWrapper: ({ event }) => (
+        eventWrapper: ({ event }: { event: TaskEvent }) => (
           <EventCard
             id={event.id}
             title={event.title}
-            assignee={event.assignee as any}
-            initiative={event.initiative as any}
+            assignee={event.assignee}
+            initiative={event.initiative}
             status={event.status}
           />
         ),

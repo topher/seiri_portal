@@ -1,7 +1,8 @@
 "use client";
 
 import { QueryClient, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApolloClient, DocumentNode } from '@apollo/client';
+import { useApolloClient } from '@apollo/client/react';
+import { DocumentNode } from '@apollo/client';
 import { useCallback, useMemo } from 'react';
 
 // Types
@@ -50,8 +51,8 @@ export function useGraphQLQuery<TData = any, TVariables = any>(
         errorPolicy,
       });
       
-      if (result.errors && errorPolicy === 'none') {
-        throw new Error(result.errors[0]?.message || 'GraphQL query failed');
+      if (result.error && errorPolicy === 'none') {
+        throw new Error(result.error?.message || 'GraphQL query failed');
       }
       
       return result.data;
@@ -86,8 +87,8 @@ export function useGraphQLMutation<TData = any, TVariables = any>(
         errorPolicy: 'all',
       });
       
-      if (result.errors) {
-        throw new Error(result.errors[0]?.message || 'GraphQL mutation failed');
+      if (result.error) {
+        throw new Error(result.error?.message || 'GraphQL mutation failed');
       }
       
       return result.data;

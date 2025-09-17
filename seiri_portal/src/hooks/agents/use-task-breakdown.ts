@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useApolloClient, gql } from '@apollo/client';
+import { useMutation, useApolloClient } from '@apollo/client/react'; import { gql } from '@apollo/client';
 import { useCallback, useState } from 'react';
 import { 
   GENERATE_TASK_BREAKDOWN,
@@ -12,6 +12,11 @@ import {
 } from '@/lib/apollo/mutations';
 import { useTaskRealtime } from '@/lib/apollo/realtime';
 import { optimisticUpdates, cacheInvalidationPatterns } from '@/lib/apollo/cache-policies';
+import type { 
+  GenerateTaskBreakdownResponse,
+  EstimateTaskEffortResponse,
+  TrackTaskProgressResponse
+} from '@/types/graphql';
 
 // Types
 interface TaskBreakdownState {
@@ -96,10 +101,10 @@ export function useTaskBreakdown(
   const { latestBreakdown, latestProgress } = useTaskRealtime(enableRealtime ? taskId : '');
 
   // Generate breakdown mutation
-  const [generateBreakdownMutation] = useMutation(GENERATE_TASK_BREAKDOWN, {
+  const [generateBreakdownMutation] = useMutation<GenerateTaskBreakdownResponse>(GENERATE_TASK_BREAKDOWN, {
     onCompleted: (data) => {
-      const result = data.generateTaskBreakdown;
-      if (result.success) {
+      const result = data?.generateTaskBreakdown;
+      if (result?.success) {
         setState(prev => ({
           ...prev,
           breakdown: result.breakdown,
@@ -125,7 +130,8 @@ export function useTaskBreakdown(
     optimisticResponse: enableOptimisticUpdates ? {
       generateTaskBreakdown: optimisticUpdates.generateTaskBreakdown(taskId),
     } : undefined,
-    update: (cache, { data }) => {
+    update: (cache, result) => {
+      const { data } = result;
       if (data?.generateTaskBreakdown?.success) {
         cache.modify({
           id: `Task:${taskId}`,
@@ -138,10 +144,10 @@ export function useTaskBreakdown(
   });
 
   // Estimate effort mutation
-  const [estimateEffortMutation] = useMutation(ESTIMATE_TASK_EFFORT, {
+  const [estimateEffortMutation] = useMutation<EstimateTaskEffortResponse>(ESTIMATE_TASK_EFFORT, {
     onCompleted: (data) => {
-      const result = data.estimateTaskEffort;
-      if (result.success) {
+      const result = data?.estimateTaskEffort;
+      if (result?.success) {
         setState(prev => ({
           ...prev,
           estimation: result.estimation,
@@ -169,8 +175,8 @@ export function useTaskBreakdown(
   // Optimize task mutation
   const [optimizeTaskMutation] = useMutation(OPTIMIZE_TASK, {
     onCompleted: (data) => {
-      const result = data.optimizeTask;
-      if (result.success) {
+      const result = (data as any)?.optimizeTask;
+      if (result?.success) {
         setState(prev => ({
           ...prev,
           optimization: result.optimization,
@@ -198,8 +204,8 @@ export function useTaskBreakdown(
   // Analyze dependencies mutation
   const [analyzeDependenciesMutation] = useMutation(ANALYZE_TASK_DEPENDENCIES, {
     onCompleted: (data) => {
-      const result = data.analyzeTaskDependencies;
-      if (result.success) {
+      const result = (data as any)?.analyzeTaskDependencies;
+      if (result?.success) {
         setState(prev => ({
           ...prev,
           dependencies: result.analysis,
@@ -225,10 +231,10 @@ export function useTaskBreakdown(
   });
 
   // Track progress mutation
-  const [trackProgressMutation] = useMutation(TRACK_TASK_PROGRESS, {
+  const [trackProgressMutation] = useMutation<TrackTaskProgressResponse>(TRACK_TASK_PROGRESS, {
     onCompleted: (data) => {
-      const result = data.trackTaskProgress;
-      if (result.success) {
+      const result = data?.trackTaskProgress;
+      if (result?.success) {
         setState(prev => ({
           ...prev,
           progress: result.progressUpdate,
@@ -251,20 +257,39 @@ export function useTaskBreakdown(
         errors: { ...prev.errors, progress: error },
       }));
     },
-    optimisticResponse: enableOptimisticUpdates ? (variables) => ({
-      trackTaskProgress: optimisticUpdates.trackTaskProgress(taskId, variables.input.progress || 0),
+    optimisticResponse: enableOptimisticUpdates ? (variables: any) => ({
+      trackTaskProgress: {
+        __typename: 'TrackTaskProgressResponse',
+        success: true,
+        progressUpdate: {
+          __typename: 'TaskProgressUpdate', 
+          taskId: taskId,
+          progress: variables.input?.progress || 0,
+          status: 'IN_PROGRESS',
+          completedSubtasks: 0,
+          currentPhase: 'In progress',
+          blockers: [],
+          estimatedCompletion: new Date().toISOString(),
+          notes: 'Optimistic update',
+          updatedAt: new Date().toISOString()
+        },
+        operationId: 'optimistic',
+        error: null
+      }
     }) : undefined,
     update: (cache, { data }) => {
       if (data?.trackTaskProgress?.success) {
         const progressUpdate = data.trackTaskProgress.progressUpdate;
-        cache.modify({
-          id: `Task:${taskId}`,
-          fields: {
-            progress: () => progressUpdate.progress,
-            status: () => progressUpdate.status,
-            currentPhase: () => progressUpdate.currentPhase,
-          },
-        });
+        if (progressUpdate) {
+          cache.modify({
+            id: `Task:${taskId}`,
+            fields: {
+              progress: () => progressUpdate.progress,
+              status: () => progressUpdate.status,
+              currentPhase: () => progressUpdate.currentPhase,
+            },
+          });
+        }
       }
     },
   });
@@ -272,8 +297,8 @@ export function useTaskBreakdown(
   // Generate subtasks mutation
   const [generateSubtasksMutation] = useMutation(AUTO_GENERATE_SUBTASKS, {
     onCompleted: (data) => {
-      const result = data.autoGenerateSubtasks;
-      if (result.success) {
+      const result = (data as any)?.autoGenerateSubtasks;
+      if (result?.success) {
         setState(prev => ({
           ...prev,
           subtasks: result.subtasks,
@@ -297,11 +322,12 @@ export function useTaskBreakdown(
       }));
     },
     update: (cache, { data }) => {
-      if (data?.autoGenerateSubtasks?.success) {
+      const result = (data as any)?.autoGenerateSubtasks;
+      if (result?.success) {
         cache.modify({
           id: `Task:${taskId}`,
           fields: {
-            subtasks: (existing = []) => [...existing, ...data.autoGenerateSubtasks.subtasks],
+            subtasks: (existing = []) => [...existing, ...result.subtasks],
           },
         });
       }

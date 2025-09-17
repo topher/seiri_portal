@@ -1,6 +1,6 @@
 "use client";
 
-import { useSubscription, useApolloClient } from '@apollo/client';
+import { useSubscription, useApolloClient } from '@apollo/client/react';
 import { useCallback, useEffect, useRef } from 'react';
 import React from 'react';
 import { 
@@ -48,8 +48,8 @@ export function useAgentOperationProgress(
       variables: { operationId },
       skip: !operationId,
       onData: ({ data }) => {
-        if (data.data?.agentOperationProgress && onProgress) {
-          onProgress(data.data.agentOperationProgress);
+        if ((data as any)?.agentOperationProgress && onProgress) {
+          onProgress((data as any).agentOperationProgress);
         }
       },
     }
@@ -59,7 +59,7 @@ export function useAgentOperationProgress(
     AGENT_OPERATION_COMPLETED,
     {
       onData: ({ data }) => {
-        const completed = data.data?.agentOperationCompleted;
+        const completed = (data as any)?.agentOperationCompleted;
         if (completed?.operationId === operationId && onCompleted) {
           onCompleted(completed);
         }
@@ -68,8 +68,8 @@ export function useAgentOperationProgress(
   );
 
   return {
-    progress: progressData?.agentOperationProgress,
-    completed: completedData?.agentOperationCompleted,
+    progress: (progressData as any)?.agentOperationProgress,
+    completed: (completedData as any)?.agentOperationCompleted,
     loading: progressLoading || completedLoading,
     error: progressError || completedError,
   };
@@ -84,7 +84,7 @@ export function useWorkspaceRealtime(workspaceId: string) {
     skip: !workspaceId,
     onData: ({ data }) => {
       // Update Apollo cache when insights are updated
-      const insights = data.data?.workspaceInsightsUpdated;
+      const insights = (data as any)?.workspaceInsightsUpdated;
       if (insights) {
         client.cache.modify({
           id: `Workspace:${workspaceId}`,
@@ -97,7 +97,7 @@ export function useWorkspaceRealtime(workspaceId: string) {
   });
 
   return {
-    latestInsights: insightsData?.workspaceInsightsUpdated,
+    latestInsights: (insightsData as any)?.workspaceInsightsUpdated,
   };
 }
 
@@ -109,7 +109,7 @@ export function useTaskRealtime(taskId: string) {
     variables: { taskId },
     skip: !taskId,
     onData: ({ data }) => {
-      const breakdown = data.data?.taskBreakdownUpdated;
+      const breakdown = (data as any)?.taskBreakdownUpdated;
       if (breakdown) {
         client.cache.modify({
           id: `Task:${taskId}`,
@@ -125,7 +125,7 @@ export function useTaskRealtime(taskId: string) {
     variables: { taskId },
     skip: !taskId,
     onData: ({ data }) => {
-      const progress = data.data?.taskProgressUpdated;
+      const progress = (data as any)?.taskProgressUpdated;
       if (progress) {
         client.cache.modify({
           id: `Task:${taskId}`,
@@ -140,8 +140,8 @@ export function useTaskRealtime(taskId: string) {
   });
 
   return {
-    latestBreakdown: breakdownData?.taskBreakdownUpdated,
-    latestProgress: progressData?.taskProgressUpdated,
+    latestBreakdown: (breakdownData as any)?.taskBreakdownUpdated,
+    latestProgress: (progressData as any)?.taskProgressUpdated,
   };
 }
 
@@ -149,7 +149,7 @@ export function useTaskRealtime(taskId: string) {
 export function useAgentStatusMonitoring(onStatusChange?: (data: any) => void) {
   const { data } = useSubscription(AGENT_STATUS_CHANGED, {
     onData: ({ data }) => {
-      const statusChange = data.data?.agentStatusChanged;
+      const statusChange = (data as any)?.agentStatusChanged;
       if (statusChange && onStatusChange) {
         onStatusChange(statusChange);
       }
@@ -157,7 +157,7 @@ export function useAgentStatusMonitoring(onStatusChange?: (data: any) => void) {
   });
 
   return {
-    latestStatusChange: data?.agentStatusChanged,
+    latestStatusChange: (data as any)?.agentStatusChanged,
   };
 }
 

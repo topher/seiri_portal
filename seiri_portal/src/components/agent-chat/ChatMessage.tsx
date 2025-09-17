@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
 import { Copy, CheckCircle, AlertCircle, User, Bot, Code, Image, FileText } from 'lucide-react';
 import { ChatMessage as ChatMessageType, ChatAttachment } from '@/hooks/use-chat-state';
 import { cn } from '@/lib/utils';

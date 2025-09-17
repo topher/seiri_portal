@@ -52,16 +52,21 @@ export const CreateTaskForm = ({ onCancel, initiativeOptions, memberOptions }: C
   const initiativeId = pathname?.includes('/initiatives/') ? 
     pathname.split('/initiatives/')[1]?.split('/')[0] : '';
 
-  const form = useForm<z.infer<typeof createTaskSchema>>({
+  type CreateTaskFormData = z.infer<typeof createTaskSchema>;
+  
+  const form = useForm<CreateTaskFormData>({
     resolver: zodResolver(createTaskSchema),
     defaultValues: {
+      name: '',
       workspaceId,
       status: TaskStatus.TODO,
       initiativeId: initiativeId || '',
+      assigneeId: '',
+      description: '',
     },
   });
 
-  const onSubmit = (values: z.infer<typeof createTaskSchema>) => {
+  const onSubmit = (values: CreateTaskFormData) => {
     mutate({ json: { ...values, workspaceId } }, {
       onSuccess: () => {
         form.reset();

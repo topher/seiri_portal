@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +31,32 @@ import {
 
 import { GET_RENTAL_WORKFLOW_DATA } from '@/lib/apollo/rental-workflow-queries';
 
+// Rental workflow data interfaces
+interface Intent {
+  id: string;
+  status: string;
+  [key: string]: any;
+}
+
+interface Offer {
+  id: string;
+  status: string;
+  [key: string]: any;
+}
+
+interface Agreement {
+  id: string;
+  status: string;
+  [key: string]: any;
+}
+
+interface RentalWorkflowData {
+  myIntents?: Intent[];
+  myOffers?: Offer[];
+  agreementsAsProvider?: Agreement[];
+  agreementsAsReceiver?: Agreement[];
+}
+
 interface RentalWorkflowProps {
   workspaceId: string;
   currentUserId: string;
@@ -48,7 +74,7 @@ export function RentalWorkflow({
   const [showFullWorkflow, setShowFullWorkflow] = useState(false);
 
   // Get comprehensive workflow data
-  const { data, loading, refetch } = useQuery(GET_RENTAL_WORKFLOW_DATA, {
+  const { data, loading, refetch } = useQuery<RentalWorkflowData>(GET_RENTAL_WORKFLOW_DATA, {
     variables: { workspaceId, userId: currentUserId },
     errorPolicy: 'all'
   });

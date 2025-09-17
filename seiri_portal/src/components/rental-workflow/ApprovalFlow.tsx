@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { useMutation, useQuery } from '@apollo/client';
-import { gql } from 'graphql-tag';
+import { useMutation, useQuery } from '@apollo/client/react';
+import { gql } from '@apollo/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,7 +26,7 @@ import {
   MessageSquare,
   AlertCircle
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format } from 'date-fns/format';
 import { toast } from 'sonner';
 
 // GraphQL Queries and Mutations
@@ -192,6 +192,65 @@ const offerSchema = z.object({
 
 type OfferForm = z.infer<typeof offerSchema>;
 
+// Data interfaces for ApprovalFlow
+interface ResourceSpecification {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  unitOfMeasure: string;
+}
+
+interface User {
+  id: string;
+  name: string;
+  email?: string;
+}
+
+interface ApprovalFlowIntent {
+  id: string;
+  name: string;
+  description: string;
+  action: string;
+  status: string;
+  startTime: string;
+  endTime: string;
+  dueDate: string;
+  resourceQuantity: number;
+  resourceSpecification: ResourceSpecification;
+  receiver: User;
+  offers: Array<{
+    id: string;
+    status: string;
+    provider: User;
+  }>;
+  createdAt: string;
+}
+
+interface ApprovalFlowOffer {
+  id: string;
+  status: string;
+  [key: string]: any;
+}
+
+interface ApprovalFlowResource {
+  id: string;
+  specification: ResourceSpecification;
+  [key: string]: any;
+}
+
+interface IntentsData {
+  intents: ApprovalFlowIntent[];
+}
+
+interface OffersData {
+  offersByProvider: ApprovalFlowOffer[];
+}
+
+interface ResourcesData {
+  resourcesByOwner: ApprovalFlowResource[];
+}
+
 interface ApprovalFlowProps {
   workspaceId: string;
   currentUserId: string;
@@ -203,19 +262,19 @@ export function ApprovalFlow({
   currentUserId, 
   view = 'provider' 
 }: ApprovalFlowProps) {
-  const [selectedIntent, setSelectedIntent] = useState<any>(null);
+  const [selectedIntent, setSelectedIntent] = useState<ApprovalFlowIntent | null>(null);
   const [activeTab, setActiveTab] = useState(view === 'provider' ? 'intents' : 'my-offers');
 
   // Queries
-  const { data: intentsData, loading: intentsLoading, refetch: refetchIntents } = useQuery(GET_PENDING_INTENTS, {
+  const { data: intentsData, loading: intentsLoading, refetch: refetchIntents } = useQuery<IntentsData>(GET_PENDING_INTENTS, {
     variables: { workspaceId },
   });
 
-  const { data: offersData, loading: offersLoading, refetch: refetchOffers } = useQuery(GET_MY_OFFERS, {
+  const { data: offersData, loading: offersLoading, refetch: refetchOffers } = useQuery<OffersData>(GET_MY_OFFERS, {
     variables: { workspaceId, providerId: currentUserId },
   });
 
-  const { data: resourcesData, loading: resourcesLoading } = useQuery(GET_AVAILABLE_RESOURCES, {
+  const { data: resourcesData, loading: resourcesLoading } = useQuery<ResourcesData>(GET_AVAILABLE_RESOURCES, {
     variables: { 
       workspaceId, 
       ownerId: currentUserId,
@@ -280,7 +339,7 @@ export function ApprovalFlow({
 
   // Memoized data
   const pendingIntents = useMemo(() => 
-    intentsData?.intents?.filter((intent: any) => intent.status === 'PENDING') || [],
+    intentsData?.intents?.filter((intent) => intent.status === 'PENDING') || [],
     [intentsData]
   );
 
@@ -290,7 +349,7 @@ export function ApprovalFlow({
   );
 
   const availableResources = useMemo(() => 
-    resourcesData?.resourcesByOwner?.filter((resource: any) => 
+    resourcesData?.resourcesByOwner?.filter((resource) => 
       !selectedIntent || resource.specification.id === selectedIntent.resourceSpecification.id
     ) || [],
     [resourcesData, selectedIntent]

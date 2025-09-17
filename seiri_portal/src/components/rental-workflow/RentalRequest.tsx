@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useMutation, useQuery } from '@apollo/client';
-import { gql } from 'graphql-tag';
+import { useMutation, useQuery } from '@apollo/client/react';
+import { gql } from '@apollo/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, Package, Clock, User } from 'lucide-react';
-import { format } from 'date-fns';
+import { format } from 'date-fns/format';
 import { toast } from 'sonner';
 
 // GraphQL Queries and Mutations
@@ -86,10 +86,10 @@ const rentalRequestSchema = z.object({
   resourceSpecificationId: z.string().min(1, "Please select a resource type"),
   resourceQuantity: z.number().min(1, "Quantity must be at least 1"),
   startTime: z.date({
-    required_error: "Start date is required",
+    message: "Start date is required",
   }),
   endTime: z.date({
-    required_error: "End date is required",
+    message: "End date is required",
   }),
   dueDate: z.date().optional(),
 }).refine((data) => data.endTime > data.startTime, {
@@ -114,11 +114,17 @@ export function RentalRequest({
 }: RentalRequestProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   
-  const { data, loading: resourcesLoading } = useQuery(GET_RESOURCES, {
+  const { data, loading: resourcesLoading } = useQuery<{
+    resources: any[];
+    resourceSpecifications: any[];
+    agents: any[];
+  }>(GET_RESOURCES, {
     variables: { workspaceId, available: true },
   });
 
-  const [createIntent, { loading: creatingIntent }] = useMutation(CREATE_INTENT, {
+  const [createIntent, { loading: creatingIntent }] = useMutation<{
+    createIntent: any;
+  }>(CREATE_INTENT, {
     onCompleted: (data) => {
       toast.success("Rental request created successfully!");
       onSuccess?.(data.createIntent);

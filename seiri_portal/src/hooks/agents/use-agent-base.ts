@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useApolloClient } from '@apollo/client';
+import { useMutation, useQuery, useApolloClient } from '@apollo/client/react';
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { 
   DISCOVER_AGENTS, 
@@ -9,6 +9,12 @@ import {
 } from '@/lib/apollo/queries';
 import { EXECUTE_AGENT_OPERATION } from '@/lib/apollo/mutations';
 import { useAgentOperationProgress } from '@/lib/apollo/realtime';
+import type { 
+  DiscoverAgentsResponse,
+  GetAgentAnalyticsResponse,
+  GetAgentOperationHistoryResponse,
+  ExecuteAgentOperationResponse 
+} from '@/types/graphql';
 
 // Types
 interface AgentOperationOptions {
@@ -85,7 +91,14 @@ export function useAgentBase(options: UseAgentBaseOptions = {}) {
   );
 
   // Execute agent operation mutation
-  const [executeOperation] = useMutation(EXECUTE_AGENT_OPERATION, {
+  const [executeOperation] = useMutation<{
+    executeAgentOperation: {
+      success: boolean;
+      result?: any;
+      error?: string;
+      operationId?: string;
+    };
+  }>(EXECUTE_AGENT_OPERATION, {
     onCompleted: (data) => {
       const result = data.executeAgentOperation;
       if (result.success) {
@@ -93,7 +106,7 @@ export function useAgentBase(options: UseAgentBaseOptions = {}) {
           ...prev,
           loading: false,
           data: result.result,
-          operationId: result.operationId,
+          operationId: result.operationId ?? null,
           error: null,
           progress: enableRealtime ? prev.progress : 100,
           stage: enableRealtime ? prev.stage : 'completed',
@@ -258,7 +271,7 @@ export function useAgentBase(options: UseAgentBaseOptions = {}) {
 
 // Hook for agent discovery
 export function useAgentDiscovery(capabilities?: string[], enabled?: boolean) {
-  const { data, loading, error, refetch } = useQuery(DISCOVER_AGENTS, {
+  const { data, loading, error, refetch } = useQuery<DiscoverAgentsResponse>(DISCOVER_AGENTS, {
     variables: { capabilities, enabled },
     errorPolicy: 'all',
   });
@@ -273,7 +286,7 @@ export function useAgentDiscovery(capabilities?: string[], enabled?: boolean) {
 
 // Hook for agent analytics
 export function useAgentAnalytics(agentId?: string, timeRange?: any) {
-  const { data, loading, error, refetch } = useQuery(GET_AGENT_ANALYTICS, {
+  const { data, loading, error, refetch } = useQuery<GetAgentAnalyticsResponse>(GET_AGENT_ANALYTICS, {
     variables: { agentId, timeRange },
     skip: !agentId,
     errorPolicy: 'all',
@@ -290,7 +303,7 @@ export function useAgentAnalytics(agentId?: string, timeRange?: any) {
 
 // Hook for agent operation history
 export function useAgentOperationHistory(agentId?: string, limit = 50, offset = 0) {
-  const { data, loading, error, fetchMore } = useQuery(GET_AGENT_OPERATION_HISTORY, {
+  const { data, loading, error, fetchMore } = useQuery<GetAgentOperationHistoryResponse>(GET_AGENT_OPERATION_HISTORY, {
     variables: { agentId, limit, offset },
     skip: !agentId,
     errorPolicy: 'all',

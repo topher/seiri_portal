@@ -43,15 +43,28 @@ interface EditTaskFormProps {
 export const EditTaskForm = ({ onCancel, initiativeOptions, memberOptions, initialValues }: EditTaskFormProps) => {
   const { mutate, isPending } = useUpdateTask();
 
-  const form = useForm<z.infer<typeof createTaskSchema>>({
-    resolver: zodResolver(createTaskSchema.omit({ workspaceId: true, description: true, })),
+  const editTaskSchema = z.object({
+    name: z.string().trim().min(1, "Required"),
+    status: z.nativeEnum(TaskStatus, { message: "Required" }),
+    initiativeId: z.string().trim().min(1, "Required"),
+    dueDate: z.date().optional(),
+    assigneeId: z.string().trim().min(1, "Required").optional(),
+  });
+
+  type EditTaskFormData = z.infer<typeof editTaskSchema>;
+  
+  const form = useForm<EditTaskFormData>({
+    resolver: zodResolver(editTaskSchema),
     defaultValues: {
-      ...initialValues,
+      name: initialValues.name,
+      status: initialValues.status,
+      initiativeId: initialValues.initiativeId,
+      assigneeId: initialValues.assigneeId,
       dueDate: initialValues.dueDate ? new Date(initialValues.dueDate) : undefined,
     },
   });
 
-  const onSubmit = (values: z.infer<typeof createTaskSchema>) => {
+  const onSubmit = (values: EditTaskFormData) => {
     mutate({ json: values, param: { taskId: initialValues.id } }, {
       onSuccess: () => {
         form.reset();

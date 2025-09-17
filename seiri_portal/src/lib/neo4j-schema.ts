@@ -187,14 +187,22 @@ export const SCHEMA_QUERIES = {
   // Create indexes for performance
   indexes: [
     "CREATE INDEX user_email IF NOT EXISTS FOR (u:User) ON (u.email)",
+    "CREATE INDEX user_clerk_id_idx IF NOT EXISTS FOR (u:User) ON (u.clerkId)",
     "CREATE INDEX workspace_invite_code IF NOT EXISTS FOR (w:Workspace) ON (w.inviteCode)",
+    "CREATE INDEX workspace_created_at IF NOT EXISTS FOR (w:Workspace) ON (w.createdAt)",
     "CREATE INDEX suite_slug IF NOT EXISTS FOR (s:Suite) ON (s.slug)",
     "CREATE INDEX suite_active IF NOT EXISTS FOR (s:Suite) ON (s.isActive)",
+    "CREATE INDEX suite_workspace_id IF NOT EXISTS FOR (s:Suite) ON (s.workspaceId)",
     "CREATE INDEX task_status IF NOT EXISTS FOR (t:Task) ON (t.status)",
     "CREATE INDEX task_priority IF NOT EXISTS FOR (t:Task) ON (t.priority)",
     "CREATE INDEX task_position IF NOT EXISTS FOR (t:Task) ON (t.position)",
+    "CREATE INDEX task_initiative_id IF NOT EXISTS FOR (t:Task) ON (t.initiativeId)",
     "CREATE INDEX initiative_moscow IF NOT EXISTS FOR (i:Initiative) ON (i.moscow)",
-    "CREATE INDEX criterion_completed IF NOT EXISTS FOR (c:AcceptanceCriterion) ON (c.completed)"
+    "CREATE INDEX initiative_suite_id IF NOT EXISTS FOR (i:Initiative) ON (i.suiteId)",
+    "CREATE INDEX initiative_status IF NOT EXISTS FOR (i:Initiative) ON (i.status)",
+    "CREATE INDEX criterion_completed IF NOT EXISTS FOR (c:AcceptanceCriterion) ON (c.completed)",
+    "CREATE INDEX criterion_task_id IF NOT EXISTS FOR (c:AcceptanceCriterion) ON (c.taskId)",
+    "CREATE INDEX criterion_order IF NOT EXISTS FOR (c:AcceptanceCriterion) ON (c.order)"
   ]
 };
 
