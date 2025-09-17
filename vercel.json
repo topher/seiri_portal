@@ -1,9 +1,10 @@
 {
-  "buildCommand": "cd seiri_portal && npm run build",
-  "outputDirectory": "seiri_portal/.next",
-  "installCommand": "cd seiri_portal && npm install --legacy-peer-deps",
-  "devCommand": "cd seiri_portal && npm run dev",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install --legacy-peer-deps",
+  "devCommand": "npm run dev",
   "framework": "nextjs",
+  "rootDirectory": "seiri_portal",
 
   "build": {
     "env": {
