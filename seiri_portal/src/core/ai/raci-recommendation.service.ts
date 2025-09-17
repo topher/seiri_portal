@@ -34,12 +34,25 @@ export interface RACIRecommendation {
 }
 
 export class AIRACIRecommendationService {
-  private openai: OpenAI;
+  private openai: OpenAI | null = null;
 
   constructor() {
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    // Don't initialize OpenAI client during construction to avoid build-time errors
+  }
+
+  /**
+   * Get OpenAI client instance (lazy-loaded)
+   */
+  private getOpenAIClient(): OpenAI {
+    if (!this.openai) {
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY environment variable is not configured');
+      }
+      this.openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+    }
+    return this.openai;
   }
 
   /**
@@ -51,7 +64,8 @@ export class AIRACIRecommendationService {
     const prompt = this.buildRACIPrompt(request);
 
     try {
-      const completion = await this.openai.chat.completions.create({
+      const openai = this.getOpenAIClient();
+      const completion = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
           {
@@ -309,7 +323,8 @@ Provide your recommendation as JSON with clear reasoning for each assignment.`;
       }
 
       // Test API connectivity with a minimal request
-      const test = await this.openai.chat.completions.create({
+      const openai = this.getOpenAIClient();
+      const test = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [{ role: 'user', content: 'Test' }],
         max_tokens: 5
