@@ -61,8 +61,9 @@ This platform specifically supports VinoVoyage wine management app integration w
 ✅ **Infrastructure** - Apollo Federation v2, Docker, services  
 ✅ **Base Cartridge SDK** - Multi-tenant, lifecycle management  
 ✅ **Shopify Cartridge** - Complete wine e-commerce integration  
-🚧 **Twilio SMS** - Wine order notifications (next)  
-🚧 **SendGrid Email** - Wine marketing campaigns (planned)  
+✅ **Twilio SMS Cartridge** - Wine order notifications, customer alerts  
+✅ **SendGrid Email Cartridge** - Wine marketing, newsletters, campaigns  
+🚧 **Automation Scripts** - Development and deployment automation (next)  
 🚧 **VinoVoyage Examples** - Integration demos (planned)  
 
 ## 📚 Documentation
