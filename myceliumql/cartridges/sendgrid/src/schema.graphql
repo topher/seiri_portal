@@ -1,0 +1,818 @@
+# SendGrid Email Integration Schema
+# Priority #3 API for wine marketing and customer communication
+
+extend schema
+  @link(url: "https://specs.apollographql.org/federation/v2.0", import: ["@key", "@external"])
+
+type Email @key(fields: "messageId") {
+  messageId: ID!
+  
+  # Message details
+  to: [EmailAddress!]!
+  from: EmailAddress!
+  replyTo: EmailAddress
+  subject: String!
+  
+  # Content
+  textContent: String
+  htmlContent: String
+  templateId: String
+  templateData: JSON
+  
+  # Status tracking
+  status: EmailStatus!
+  deliveryStatus: EmailDeliveryStatus
+  
+  # Wine-specific context
+  wineEmailContext: WineEmailContext
+  
+  # Categories and tracking
+  categories: [String!]!
+  customArgs: JSON
+  
+  # Timestamps
+  sentAt: String!
+  deliveredAt: String
+  openedAt: String
+  clickedAt: String
+}
+
+type EmailEvent @key(fields: "id") {
+  id: ID!
+  messageId: ID!
+  
+  # Event details
+  event: EmailEventType!
+  timestamp: Int!
+  
+  # Event-specific data
+  url: String          # For click events
+  userAgent: String    # For open/click events
+  ip: String          # For open/click events
+  reason: String      # For bounce/block events
+  bounceType: String  # For bounce events
+  
+  # Wine email context
+  wineEventContext: WineEmailEventContext
+}
+
+type EmailCampaign @key(fields: "id") {
+  id: ID!
+  name: String!
+  description: String
+  
+  # Campaign configuration
+  subject: String!
+  templateId: String
+  fromEmail: EmailAddress!
+  
+  # Wine campaign details
+  wineCampaignDetails: WineEmailCampaignDetails!
+  
+  # Targeting and scheduling
+  targetSegment: WineCustomerSegment!
+  scheduledAt: String
+  
+  # Status and results
+  status: EmailCampaignStatus!
+  recipientCount: Int!
+  deliveryStats: EmailDeliveryStats!
+  
+  # Timestamps
+  createdAt: String!
+  updatedAt: String!
+  sentAt: String
+}
+
+type EmailTemplate @key(fields: "id") {
+  id: ID!
+  name: String!
+  version: String!
+  
+  # Template content
+  subject: String!
+  htmlContent: String!
+  textContent: String
+  
+  # Wine template specifics
+  wineTemplateType: WineEmailTemplateType!
+  wineTemplateData: WineTemplateData
+  
+  # Template metadata
+  isActive: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type WineNewsletter @key(fields: "id") {
+  id: ID!
+  title: String!
+  edition: String!
+  
+  # Newsletter content
+  featuredWines: [ID!]!
+  wineEducationContent: WineEducationContent!
+  seasonalRecommendations: [WineSeasonalRecommendation!]!
+  
+  # Newsletter sections
+  sections: [NewsletterSection!]!
+  
+  # Distribution
+  targetSegments: [WineCustomerSegment!]!
+  deliverySchedule: NewsletterDeliverySchedule!
+  
+  # Status
+  status: NewsletterStatus!
+  subscriberCount: Int!
+  
+  # Performance
+  deliveryStats: EmailDeliveryStats!
+  
+  # Timestamps
+  createdAt: String!
+  publishedAt: String
+  nextDeliveryAt: String
+}
+
+# Wine-specific types
+type WineEmailContext {
+  customerId: ID!
+  restaurantId: ID
+  emailType: WineEmailType!
+  wineRecommendations: [WineRecommendationEmailData!]!
+  orderContext: WineOrderEmailContext
+  loyaltyContext: WineLoyaltyEmailContext
+  eventContext: WineEventEmailContext
+}
+
+type WineRecommendationEmailData {
+  wineId: ID!
+  wineName: String!
+  vintage: String
+  varietal: String
+  region: String
+  recommendationReason: String!
+  personalizedNote: String
+  pairingRecommendations: [String!]!
+  price: Money
+  availabilityStatus: WineAvailabilityStatus!
+}
+
+type WineOrderEmailContext {
+  orderId: ID!
+  orderNumber: String!
+  orderItems: [WineOrderEmailItem!]!
+  totalAmount: Money!
+  orderStatus: String!
+  estimatedDelivery: String
+  trackingInfo: OrderTrackingInfo
+}
+
+type WineOrderEmailItem {
+  wineId: ID!
+  wineName: String!
+  vintage: String
+  quantity: Int!
+  unitPrice: Money!
+  totalPrice: Money!
+  specialInstructions: String
+}
+
+type OrderTrackingInfo {
+  trackingNumber: String
+  carrier: String
+  estimatedDelivery: String
+  trackingUrl: String
+}
+
+type WineLoyaltyEmailContext {
+  currentTier: WineLoyaltyTier!
+  pointsBalance: Int!
+  pointsToNextTier: Int
+  achievementsUnlocked: [LoyaltyAchievement!]!
+  exclusiveOffers: [WineExclusiveOffer!]!
+}
+
+type LoyaltyAchievement {
+  id: ID!
+  title: String!
+  description: String!
+  badgeIcon: String
+  unlockedAt: String!
+}
+
+type WineExclusiveOffer {
+  id: ID!
+  title: String!
+  description: String!
+  discountPercentage: Float
+  validUntil: String!
+  applicableWines: [ID!]!
+}
+
+type WineEventEmailContext {
+  eventId: ID!
+  eventType: WineEventType!
+  eventTitle: String!
+  eventDate: String!
+  eventLocation: String
+  featuredWines: [ID!]!
+  ticketInfo: EventTicketInfo
+}
+
+type EventTicketInfo {
+  price: Money
+  availableTickets: Int
+  bookingUrl: String
+  bookingDeadline: String
+}
+
+type WineEmailEventContext {
+  wineId: ID
+  customerId: ID!
+  eventType: EmailEventType!
+  interactionData: WineEmailInteractionData
+}
+
+type WineEmailInteractionData {
+  clickedWineId: ID
+  clickedSection: String
+  timeSpentReading: Int
+  deviceType: String
+  location: String
+}
+
+type WineEmailCampaignDetails {
+  campaignType: WineEmailCampaignType!
+  featuredWines: [ID!]!
+  promotionalOffers: [WinePromotionalOffer!]!
+  educationalContent: WineEducationContent
+  callToAction: EmailCallToAction!
+}
+
+type WinePromotionalOffer {
+  id: ID!
+  title: String!
+  description: String!
+  discountType: DiscountType!
+  discountValue: Float!
+  minimumPurchase: Money
+  validUntil: String!
+  promoCode: String
+}
+
+type WineEducationContent {
+  title: String!
+  content: String!
+  wineKnowledgeLevel: WineKnowledgeLevel!
+  topicscovered: [WineEducationTopic!]!
+  readingTime: Int!
+}
+
+type EmailCallToAction {
+  text: String!
+  url: String!
+  buttonStyle: ButtonStyle!
+  placement: CTAPlacement!
+}
+
+type WineSeasonalRecommendation {
+  season: Season!
+  description: String!
+  recommendedWines: [ID!]!
+  pairingIdeas: [String!]!
+}
+
+type NewsletterSection {
+  id: ID!
+  title: String!
+  sectionType: NewsletterSectionType!
+  content: String!
+  wineContent: [ID!]!
+  order: Int!
+}
+
+type NewsletterDeliverySchedule {
+  frequency: DeliveryFrequency!
+  dayOfWeek: DayOfWeek
+  timeOfDay: String!
+  timezone: String!
+  nextDelivery: String!
+}
+
+type WineTemplateData {
+  templateType: WineEmailTemplateType!
+  defaultWineData: JSON
+  personalizationFields: [String!]!
+  wineDisplayOptions: WineDisplayOptions!
+}
+
+type WineDisplayOptions {
+  showVintage: Boolean!
+  showVarietal: Boolean!
+  showRegion: Boolean!
+  showTastingNotes: Boolean!
+  showPairings: Boolean!
+  showPrice: Boolean!
+  imageSize: ImageSize!
+}
+
+# Supporting types
+type EmailAddress {
+  email: String!
+  name: String
+}
+
+type Money {
+  amount: Float!
+  currency: String!
+}
+
+type EmailDeliveryStats {
+  sent: Int!
+  delivered: Int!
+  opened: Int!
+  clicked: Int!
+  bounced: Int!
+  unsubscribed: Int!
+  spam: Int!
+  deliveryRate: Float!
+  openRate: Float!
+  clickRate: Float!
+  unsubscribeRate: Float!
+}
+
+# Enums
+enum EmailStatus {
+  QUEUED
+  PROCESSING
+  SENT
+  DELIVERED
+  BOUNCED
+  DROPPED
+  DEFERRED
+}
+
+enum EmailDeliveryStatus {
+  DELIVERED
+  BOUNCED
+  DROPPED
+  SPAM
+  UNSUBSCRIBE
+  GROUP_UNSUBSCRIBE
+  GROUP_RESUBSCRIBE
+}
+
+enum EmailEventType {
+  PROCESSED
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  DROPPED
+  SPAM_REPORT
+  UNSUBSCRIBE
+  GROUP_UNSUBSCRIBE
+  GROUP_RESUBSCRIBE
+}
+
+enum EmailCampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  PAUSED
+  CANCELED
+  COMPLETED
+}
+
+enum WineEmailType {
+  ORDER_CONFIRMATION
+  ORDER_SHIPPED
+  WINE_RECOMMENDATION
+  NEW_ARRIVAL_ANNOUNCEMENT
+  SEASONAL_PROMOTION
+  LOYALTY_UPDATE
+  NEWSLETTER
+  EVENT_INVITATION
+  EDUCATIONAL_CONTENT
+  ABANDONED_CART
+  REORDER_REMINDER
+  VINTAGE_ALERT
+}
+
+enum WineEmailTemplateType {
+  ORDER_CONFIRMATION
+  WINE_RECOMMENDATION
+  NEWSLETTER
+  PROMOTIONAL
+  EDUCATIONAL
+  EVENT_INVITATION
+  LOYALTY_COMMUNICATION
+  SEASONAL_CAMPAIGN
+}
+
+enum WineEmailCampaignType {
+  PROMOTIONAL
+  EDUCATIONAL
+  NEW_ARRIVALS
+  SEASONAL
+  LOYALTY_EXCLUSIVE
+  EVENT_MARKETING
+  ABANDONED_CART_RECOVERY
+  REACTIVATION
+}
+
+enum WineAvailabilityStatus {
+  IN_STOCK
+  LOW_STOCK
+  OUT_OF_STOCK
+  PRE_ORDER
+  LIMITED_EDITION
+}
+
+enum WineLoyaltyTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+}
+
+enum WineEventType {
+  WINE_TASTING
+  VINEYARD_DINNER
+  WINE_EDUCATION
+  HARVEST_EVENT
+  RELEASE_PARTY
+  PAIRING_DINNER
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_SHIPPING
+  BUY_ONE_GET_ONE
+}
+
+enum WineKnowledgeLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  SOMMELIER
+}
+
+enum WineEducationTopic {
+  VARIETALS
+  REGIONS
+  VINTAGE_GUIDE
+  TASTING_NOTES
+  FOOD_PAIRING
+  STORAGE_TIPS
+  SERVING_GUIDE
+  WINE_MAKING
+}
+
+enum ButtonStyle {
+  PRIMARY
+  SECONDARY
+  OUTLINE
+  TEXT_LINK
+}
+
+enum CTAPlacement {
+  HEADER
+  BODY
+  FOOTER
+  SIDEBAR
+}
+
+enum Season {
+  SPRING
+  SUMMER
+  FALL
+  WINTER
+}
+
+enum NewsletterSectionType {
+  FEATURED_WINES
+  EDUCATION
+  NEWS
+  EVENTS
+  PROMOTIONS
+  CUSTOMER_SPOTLIGHT
+}
+
+enum DeliveryFrequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum NewsletterStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ImageSize {
+  SMALL
+  MEDIUM
+  LARGE
+  FULL_WIDTH
+}
+
+# Queries
+type Query {
+  # Email queries
+  email(messageId: ID!): Email
+  emails(
+    to: String
+    from: String
+    subject: String
+    status: EmailStatus
+    sentAfter: String
+    sentBefore: String
+    first: Int = 10
+    after: String
+  ): EmailConnection!
+  
+  # Wine-specific email queries
+  customerWineEmails(customerId: ID!, first: Int = 10): EmailConnection!
+  wineOrderEmails(orderId: ID!): [Email!]!
+  wineRecommendationEmails(customerId: ID!, first: Int = 10): EmailConnection!
+  
+  # Email events
+  emailEvent(id: ID!): EmailEvent
+  emailEvents(messageId: ID!): [EmailEvent!]!
+  wineEmailAnalytics(customerId: ID!, dateRange: DateRange!): WineEmailAnalytics!
+  
+  # Campaign queries
+  emailCampaign(id: ID!): EmailCampaign
+  emailCampaigns(
+    status: EmailCampaignStatus
+    campaignType: WineEmailCampaignType
+    first: Int = 10
+  ): EmailCampaignConnection!
+  
+  # Template queries
+  emailTemplate(id: ID!): EmailTemplate
+  emailTemplates(
+    templateType: WineEmailTemplateType
+    isActive: Boolean
+  ): [EmailTemplate!]!
+  
+  # Newsletter queries
+  wineNewsletter(id: ID!): WineNewsletter
+  wineNewsletters(
+    status: NewsletterStatus
+    first: Int = 10
+  ): WineNewsletterConnection!
+  
+  # Analytics queries
+  emailAnalytics(dateRange: DateRange!): EmailAnalytics!
+  campaignPerformance(campaignId: ID!): CampaignPerformance!
+  customerEmailEngagement(customerId: ID!): CustomerEmailEngagement!
+  
+  # Wine customer segmentation
+  emailSubscriberSegments: [WineCustomerSegment!]!
+  segmentEmailPreview(segmentId: ID!, templateId: ID!): EmailPreview!
+}
+
+# Mutations
+type Mutation {
+  # Send emails
+  sendWineRecommendationEmail(input: WineRecommendationEmailInput!): SendEmailPayload!
+  sendWineOrderConfirmation(input: WineOrderEmailInput!): SendEmailPayload!
+  sendWineNewsletterEmail(input: WineNewsletterEmailInput!): SendEmailPayload!
+  sendCustomWineEmail(input: CustomWineEmailInput!): SendEmailPayload!
+  
+  # Campaign management
+  createWineEmailCampaign(input: CreateWineEmailCampaignInput!): CreateEmailCampaignPayload!
+  scheduleEmailCampaign(id: ID!, scheduledAt: String!): ScheduleEmailCampaignPayload!
+  sendEmailCampaign(id: ID!): SendEmailCampaignPayload!
+  pauseEmailCampaign(id: ID!): PauseEmailCampaignPayload!
+  
+  # Template management
+  createWineEmailTemplate(input: CreateWineEmailTemplateInput!): CreateEmailTemplatePayload!
+  updateWineEmailTemplate(id: ID!, input: UpdateWineEmailTemplateInput!): UpdateEmailTemplatePayload!
+  activateEmailTemplate(id: ID!): ActivateEmailTemplatePayload!
+  deactivateEmailTemplate(id: ID!): DeactivateEmailTemplatePayload!
+  
+  # Newsletter management
+  createWineNewsletter(input: CreateWineNewsletterInput!): CreateWineNewsletterPayload!
+  publishWineNewsletter(id: ID!): PublishWineNewsletterPayload!
+  scheduleWineNewsletter(id: ID!, scheduledAt: String!): ScheduleWineNewsletterPayload!
+  
+  # Subscription management
+  updateEmailPreferences(input: EmailPreferencesInput!): UpdateEmailPreferencesPayload!
+  subscribeToWineEmails(input: WineEmailSubscriptionInput!): SubscribePayload!
+  unsubscribeFromWineEmails(customerId: ID!, reason: String): UnsubscribePayload!
+  
+  # Bulk operations
+  sendBulkWineEmails(input: BulkWineEmailInput!): BulkSendEmailPayload!
+  importEmailContacts(input: ImportContactsInput!): ImportContactsPayload!
+}
+
+# Connection types
+type EmailConnection {
+  edges: [EmailEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type EmailEdge {
+  node: Email!
+  cursor: String!
+}
+
+type EmailCampaignConnection {
+  edges: [EmailCampaignEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type EmailCampaignEdge {
+  node: EmailCampaign!
+  cursor: String!
+}
+
+type WineNewsletterConnection {
+  edges: [WineNewsletterEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type WineNewsletterEdge {
+  node: WineNewsletter!
+  cursor: String!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+# Input types would be defined here...
+# (Abbreviated for space, but would include all necessary input types)
+
+input WineRecommendationEmailInput {
+  customerId: ID!
+  recommendations: [WineRecommendationEmailDataInput!]!
+  personalizedMessage: String
+  scheduledAt: String
+}
+
+input CreateWineEmailCampaignInput {
+  name: String!
+  description: String
+  subject: String!
+  templateId: ID!
+  wineCampaignDetails: WineEmailCampaignDetailsInput!
+  targetSegmentId: ID!
+  scheduledAt: String
+}
+
+input EmailPreferencesInput {
+  customerId: ID!
+  wineRecommendations: Boolean!
+  orderUpdates: Boolean!
+  newsletter: Boolean!
+  promotionalEmails: Boolean!
+  eventInvitations: Boolean!
+  educationalContent: Boolean!
+  frequency: EmailFrequency!
+}
+
+# Additional input types...
+
+# Payload types
+type SendEmailPayload {
+  email: Email
+  success: Boolean!
+  userErrors: [UserError!]!
+}
+
+type CreateEmailCampaignPayload {
+  campaign: EmailCampaign
+  userErrors: [UserError!]!
+}
+
+# Analytics types
+type EmailAnalytics {
+  totalSent: Int!
+  totalDelivered: Int!
+  totalOpened: Int!
+  totalClicked: Int!
+  deliveryRate: Float!
+  openRate: Float!
+  clickRate: Float!
+  topPerformingTemplates: [TemplatePerformance!]!
+  engagementTrends: [EngagementTrend!]!
+}
+
+type WineEmailAnalytics {
+  customerEngagement: CustomerEmailEngagement!
+  wineInteractionStats: [WineInteractionStats!]!
+  preferenceInsights: CustomerPreferenceInsights!
+}
+
+type CustomerEmailEngagement {
+  totalEmailsReceived: Int!
+  totalOpened: Int!
+  totalClicked: Int!
+  averageTimeToOpen: String!
+  favoriteEmailTypes: [WineEmailType!]!
+  mostClickedWines: [ID!]!
+}
+
+type WineInteractionStats {
+  wineId: ID!
+  wineName: String!
+  clickCount: Int!
+  clickRate: Float!
+  conversionRate: Float!
+}
+
+type CustomerPreferenceInsights {
+  preferredEmailTime: String!
+  preferredEmailFrequency: EmailFrequency!
+  engagementLevel: EngagementLevel!
+  recommendedContent: [WineEmailType!]!
+}
+
+enum EmailFrequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum EngagementLevel {
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+}
+
+type TemplatePerformance {
+  templateId: ID!
+  templateName: String!
+  sentCount: Int!
+  openRate: Float!
+  clickRate: Float!
+}
+
+type EngagementTrend {
+  date: String!
+  openRate: Float!
+  clickRate: Float!
+}
+
+type UserError {
+  field: [String!]
+  message: String!
+  code: String
+}
+
+type CampaignPerformance {
+  campaignId: ID!
+  deliveryStats: EmailDeliveryStats!
+  revenueGenerated: Money
+  conversionRate: Float!
+  topPerformingWines: [WinePerformanceStats!]!
+}
+
+type WinePerformanceStats {
+  wineId: ID!
+  wineName: String!
+  clickCount: Int!
+  conversionCount: Int!
+  revenueGenerated: Money!
+}
+
+type EmailPreview {
+  subject: String!
+  htmlContent: String!
+  textContent: String!
+  recipientCount: Int!
+}
+
+# Scalar types
+scalar JSON
+scalar DateRange

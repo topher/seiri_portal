@@ -1,0 +1,782 @@
+# Twilio SMS Integration Schema
+# Priority #2 API for wine order notifications and customer communication
+
+extend schema
+  @link(url: "https://specs.apollographql.org/federation/v2.0", import: ["@key", "@external"])
+
+type SMSMessage @key(fields: "sid") {
+  sid: ID!
+  accountSid: String!
+  
+  # Message details
+  to: String!
+  from: String!
+  body: String!
+  
+  # Status tracking
+  status: SMSStatus!
+  direction: MessageDirection!
+  
+  # Pricing and delivery
+  price: String
+  priceUnit: String
+  
+  # Error handling
+  errorCode: Int
+  errorMessage: String
+  
+  # Media attachments (MMS)
+  numMedia: Int!
+  mediaUrls: [String!]!
+  
+  # Wine-specific context
+  wineMessageContext: WineMessageContext
+  
+  # Timestamps
+  dateCreated: String!
+  dateUpdated: String!
+  dateSent: String
+}
+
+type PhoneVerification @key(fields: "sid") {
+  sid: ID!
+  serviceSid: String!
+  
+  # Phone number being verified
+  to: String!
+  channel: VerificationChannel!
+  
+  # Verification status
+  status: VerificationStatus!
+  valid: Boolean
+  
+  # Configuration
+  codeLength: Int!
+  locale: String!
+  
+  # Attempts and security
+  sendCodeAttempts: [VerificationAttempt!]!
+  checkAttempts: [VerificationCheck!]!
+  
+  # Wine customer context
+  wineCustomerContext: WineCustomerVerificationContext
+  
+  # Timestamps
+  dateCreated: String!
+  dateUpdated: String!
+}
+
+type SMSCampaign @key(fields: "id") {
+  id: ID!
+  name: String!
+  description: String
+  
+  # Campaign details
+  messageTemplate: String!
+  scheduledAt: String
+  status: CampaignStatus!
+  
+  # Targeting
+  targetAudience: WineCustomerSegment!
+  recipientCount: Int!
+  
+  # Wine-specific campaign data
+  wineCampaignDetails: WineCampaignDetails
+  
+  # Results tracking
+  deliveryStats: SMSDeliveryStats!
+  
+  # Timestamps
+  createdAt: String!
+  updatedAt: String!
+  sentAt: String
+}
+
+type WineNotification @key(fields: "id") {
+  id: ID!
+  type: WineNotificationType!
+  
+  # Notification content
+  title: String!
+  message: String!
+  
+  # Wine context
+  wineId: ID
+  orderId: ID
+  customerId: ID!
+  
+  # Delivery details
+  smsMessage: SMSMessage
+  deliveryStatus: NotificationDeliveryStatus!
+  
+  # Scheduling
+  scheduledFor: String
+  sentAt: String
+  
+  # Wine-specific data
+  wineDetails: WineNotificationDetails
+  
+  # Timestamps
+  createdAt: String!
+  updatedAt: String!
+}
+
+# Wine-specific types
+type WineMessageContext {
+  orderId: ID
+  customerId: ID!
+  restaurantId: ID
+  messageType: WineMessageType!
+  wineDetails: WineMessageDetails
+  orderContext: WineOrderMessageContext
+}
+
+type WineMessageDetails {
+  wineId: ID
+  wineName: String
+  vintage: String
+  varietal: String
+  quantity: Int
+  tableNumber: String
+  specialInstructions: String
+}
+
+type WineOrderMessageContext {
+  orderNumber: String!
+  orderStatus: String!
+  estimatedReady: String
+  pickupLocation: String
+  totalAmount: String
+}
+
+type WineCustomerVerificationContext {
+  customerId: ID!
+  restaurantId: ID
+  verificationPurpose: VerificationPurpose!
+  loyaltyTier: WineLoyaltyTier
+}
+
+type WineCampaignDetails {
+  campaignType: WineCampaignType!
+  featuredWines: [ID!]!
+  discountCode: String
+  validUntil: String
+  targetRegions: [String!]!
+  targetVarietals: [String!]!
+  minOrderValue: Float
+}
+
+type SMSDeliveryStats {
+  sent: Int!
+  delivered: Int!
+  failed: Int!
+  undelivered: Int!
+  queued: Int!
+  deliveryRate: Float!
+  averageDeliveryTime: String
+}
+
+type WineNotificationDetails {
+  wineRecommendation: WineRecommendationDetails
+  inventoryAlert: WineInventoryAlert
+  orderUpdate: WineOrderUpdate
+  loyaltyUpdate: WineLoyaltyUpdate
+}
+
+type WineRecommendationDetails {
+  recommendedWines: [ID!]!
+  recommendationReason: String!
+  personalizedMessage: String
+  validUntil: String
+}
+
+type WineInventoryAlert {
+  wineId: ID!
+  wineName: String!
+  stockLevel: Int!
+  alertType: InventoryAlertType!
+  restockDate: String
+}
+
+type WineOrderUpdate {
+  orderId: ID!
+  orderNumber: String!
+  statusUpdate: String!
+  estimatedTime: String
+  additionalInfo: String
+}
+
+type WineLoyaltyUpdate {
+  pointsEarned: Int
+  newTier: WineLoyaltyTier
+  specialOffer: String
+  achievementUnlocked: String
+}
+
+type VerificationAttempt {
+  attempt: Int!
+  channel: VerificationChannel!
+  sentAt: String!
+}
+
+type VerificationCheck {
+  attempt: Int!
+  status: String!
+  checkedAt: String!
+}
+
+type WineCustomerSegment {
+  id: ID!
+  name: String!
+  description: String
+  criteria: SegmentCriteria!
+  estimatedSize: Int!
+}
+
+type SegmentCriteria {
+  preferredVarietals: [String!]!
+  loyaltyTiers: [WineLoyaltyTier!]!
+  orderFrequency: OrderFrequency!
+  averageOrderValue: MoneyRange
+  lastOrderDays: Int
+  region: String
+}
+
+type MoneyRange {
+  min: Float!
+  max: Float!
+  currency: String!
+}
+
+# Enums
+enum SMSStatus {
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  UNDELIVERED
+  FAILED
+  RECEIVED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND_API
+  OUTBOUND_CALL
+  OUTBOUND_REPLY
+}
+
+enum VerificationChannel {
+  SMS
+  CALL
+  EMAIL
+  WHATSAPP
+  AUTO
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  CANCELED
+  MAX_ATTEMPTS_REACHED
+  FAILED
+  EXPIRED
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  PAUSED
+  CANCELED
+  COMPLETED
+}
+
+enum WineNotificationType {
+  ORDER_CONFIRMATION
+  ORDER_READY
+  ORDER_DELAYED
+  WINE_RECOMMENDATION
+  NEW_ARRIVAL
+  LOW_STOCK_ALERT
+  LOYALTY_UPDATE
+  SPECIAL_OFFER
+  TASTING_INVITATION
+  RESERVATION_REMINDER
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  SCHEDULED
+  SENT
+  DELIVERED
+  FAILED
+  CANCELED
+}
+
+enum WineMessageType {
+  ORDER_UPDATE
+  WINE_RECOMMENDATION
+  INVENTORY_ALERT
+  LOYALTY_NOTIFICATION
+  MARKETING_MESSAGE
+  VERIFICATION_CODE
+  CUSTOMER_SERVICE
+}
+
+enum VerificationPurpose {
+  ACCOUNT_CREATION
+  ORDER_VERIFICATION
+  LOYALTY_ENROLLMENT
+  RESERVATION_CONFIRMATION
+  PAYMENT_VERIFICATION
+}
+
+enum WineLoyaltyTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+}
+
+enum WineCampaignType {
+  NEW_ARRIVALS
+  VINTAGE_PROMOTION
+  VARIETAL_FOCUS
+  SEASONAL_SPECIAL
+  LOYALTY_EXCLUSIVE
+  CLEARANCE_SALE
+  TASTING_EVENT
+  EDUCATIONAL
+}
+
+enum InventoryAlertType {
+  LOW_STOCK
+  OUT_OF_STOCK
+  RESTOCK_AVAILABLE
+  LAST_BOTTLE
+  VINTAGE_ENDING
+}
+
+enum OrderFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  OCCASIONAL
+  FREQUENT
+}
+
+# Queries
+type Query {
+  # SMS message queries
+  smsMessage(sid: ID!): SMSMessage
+  smsMessages(
+    to: String
+    from: String
+    dateSent: String
+    status: SMSStatus
+    first: Int = 10
+    after: String
+  ): SMSMessageConnection!
+  
+  # Wine-specific SMS queries
+  wineOrderMessages(orderId: ID!): [SMSMessage!]!
+  customerWineMessages(customerId: ID!, first: Int = 10): SMSMessageConnection!
+  
+  # Phone verification queries
+  phoneVerification(sid: ID!): PhoneVerification
+  customerVerifications(customerId: ID!): [PhoneVerification!]!
+  
+  # Campaign queries
+  smsCampaign(id: ID!): SMSCampaign
+  smsCampaigns(
+    status: CampaignStatus
+    campaignType: WineCampaignType
+    first: Int = 10
+  ): SMSCampaignConnection!
+  
+  # Wine notification queries
+  wineNotification(id: ID!): WineNotification
+  customerNotifications(
+    customerId: ID!
+    type: WineNotificationType
+    first: Int = 10
+  ): WineNotificationConnection!
+  
+  # Analytics queries
+  smsAnalytics(dateRange: DateRange!): SMSAnalytics!
+  wineNotificationAnalytics(dateRange: DateRange!): WineNotificationAnalytics!
+  
+  # Customer segmentation
+  wineCustomerSegments: [WineCustomerSegment!]!
+  segmentPreview(criteria: SegmentCriteriaInput!): SegmentPreview!
+}
+
+# Mutations
+type Mutation {
+  # Send SMS messages
+  sendWineOrderNotification(input: WineOrderNotificationInput!): SendSMSPayload!
+  sendWineRecommendation(input: WineRecommendationSMSInput!): SendSMSPayload!
+  sendCustomWineMessage(input: CustomWineMessageInput!): SendSMSPayload!
+  
+  # Phone verification
+  startPhoneVerification(input: StartVerificationInput!): StartVerificationPayload!
+  checkPhoneVerification(input: CheckVerificationInput!): CheckVerificationPayload!
+  
+  # Campaign management
+  createWineSMSCampaign(input: CreateWineCampaignInput!): CreateCampaignPayload!
+  scheduleSMSCampaign(id: ID!, scheduledAt: String!): ScheduleCampaignPayload!
+  sendSMSCampaign(id: ID!): SendCampaignPayload!
+  pauseSMSCampaign(id: ID!): PauseCampaignPayload!
+  
+  # Wine notification management
+  scheduleWineNotification(input: ScheduleWineNotificationInput!): ScheduleNotificationPayload!
+  cancelWineNotification(id: ID!): CancelNotificationPayload!
+  
+  # Customer communication preferences
+  updateSMSPreferences(input: SMSPreferencesInput!): UpdatePreferencesPayload!
+  optOutCustomer(customerId: ID!, reason: String): OptOutPayload!
+  optInCustomer(customerId: ID!): OptInPayload!
+  
+  # Bulk operations
+  sendBulkWineNotifications(input: BulkWineNotificationInput!): BulkSendPayload!
+}
+
+# Connection types for pagination
+type SMSMessageConnection {
+  edges: [SMSMessageEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type SMSMessageEdge {
+  node: SMSMessage!
+  cursor: String!
+}
+
+type SMSCampaignConnection {
+  edges: [SMSCampaignEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type SMSCampaignEdge {
+  node: SMSCampaign!
+  cursor: String!
+}
+
+type WineNotificationConnection {
+  edges: [WineNotificationEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type WineNotificationEdge {
+  node: WineNotification!
+  cursor: String!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+# Input types
+input WineOrderNotificationInput {
+  customerId: ID!
+  orderId: ID!
+  messageType: WineMessageType!
+  wineDetails: WineMessageDetailsInput
+  orderContext: WineOrderMessageContextInput
+  scheduledFor: String
+}
+
+input WineRecommendationSMSInput {
+  customerId: ID!
+  recommendedWines: [ID!]!
+  personalizedMessage: String
+  discountCode: String
+  validUntil: String
+}
+
+input CustomWineMessageInput {
+  to: String!
+  message: String!
+  wineContext: WineMessageContextInput
+  scheduledFor: String
+}
+
+input StartVerificationInput {
+  to: String!
+  channel: VerificationChannel = SMS
+  customerId: ID
+  purpose: VerificationPurpose!
+}
+
+input CheckVerificationInput {
+  to: String!
+  code: String!
+}
+
+input CreateWineCampaignInput {
+  name: String!
+  description: String
+  messageTemplate: String!
+  campaignType: WineCampaignType!
+  targetSegment: SegmentCriteriaInput!
+  wineCampaignDetails: WineCampaignDetailsInput!
+  scheduledAt: String
+}
+
+input ScheduleWineNotificationInput {
+  customerId: ID!
+  type: WineNotificationType!
+  scheduledFor: String!
+  wineDetails: WineNotificationDetailsInput
+}
+
+input SMSPreferencesInput {
+  customerId: ID!
+  smsEnabled: Boolean!
+  wineAlerts: Boolean!
+  orderUpdates: Boolean!
+  marketingMessages: Boolean!
+  loyaltyUpdates: Boolean!
+  quietHours: QuietHoursInput
+}
+
+input BulkWineNotificationInput {
+  customerIds: [ID!]!
+  notificationType: WineNotificationType!
+  messageTemplate: String!
+  wineContext: WineMessageContextInput
+  scheduledFor: String
+}
+
+# Supporting input types
+input WineMessageDetailsInput {
+  wineId: ID
+  wineName: String
+  vintage: String
+  varietal: String
+  quantity: Int
+  tableNumber: String
+}
+
+input WineOrderMessageContextInput {
+  orderNumber: String!
+  orderStatus: String!
+  estimatedReady: String
+  pickupLocation: String
+  totalAmount: String
+}
+
+input WineMessageContextInput {
+  orderId: ID
+  customerId: ID!
+  restaurantId: ID
+  messageType: WineMessageType!
+}
+
+input SegmentCriteriaInput {
+  preferredVarietals: [String!]
+  loyaltyTiers: [WineLoyaltyTier!]
+  orderFrequency: OrderFrequency
+  averageOrderValue: MoneyRangeInput
+  lastOrderDays: Int
+  region: String
+}
+
+input MoneyRangeInput {
+  min: Float!
+  max: Float!
+  currency: String = "USD"
+}
+
+input WineCampaignDetailsInput {
+  featuredWines: [ID!]!
+  discountCode: String
+  validUntil: String
+  targetRegions: [String!]
+  targetVarietals: [String!]
+  minOrderValue: Float
+}
+
+input WineNotificationDetailsInput {
+  wineRecommendation: WineRecommendationDetailsInput
+  inventoryAlert: WineInventoryAlertInput
+  orderUpdate: WineOrderUpdateInput
+  loyaltyUpdate: WineLoyaltyUpdateInput
+}
+
+input WineRecommendationDetailsInput {
+  recommendedWines: [ID!]!
+  recommendationReason: String!
+  personalizedMessage: String
+  validUntil: String
+}
+
+input WineInventoryAlertInput {
+  wineId: ID!
+  wineName: String!
+  stockLevel: Int!
+  alertType: InventoryAlertType!
+  restockDate: String
+}
+
+input WineOrderUpdateInput {
+  orderId: ID!
+  orderNumber: String!
+  statusUpdate: String!
+  estimatedTime: String
+  additionalInfo: String
+}
+
+input WineLoyaltyUpdateInput {
+  pointsEarned: Int
+  newTier: WineLoyaltyTier
+  specialOffer: String
+  achievementUnlocked: String
+}
+
+input QuietHoursInput {
+  start: String!  # HH:MM format
+  end: String!    # HH:MM format
+  timezone: String!
+}
+
+input DateRange {
+  start: String!
+  end: String!
+}
+
+# Payload types
+type SendSMSPayload {
+  message: SMSMessage
+  notification: WineNotification
+  success: Boolean!
+  userErrors: [UserError!]!
+}
+
+type StartVerificationPayload {
+  verification: PhoneVerification
+  success: Boolean!
+  userErrors: [UserError!]!
+}
+
+type CheckVerificationPayload {
+  verification: PhoneVerification
+  valid: Boolean!
+  userErrors: [UserError!]!
+}
+
+type CreateCampaignPayload {
+  campaign: SMSCampaign
+  userErrors: [UserError!]!
+}
+
+type ScheduleCampaignPayload {
+  campaign: SMSCampaign
+  userErrors: [UserError!]!
+}
+
+type SendCampaignPayload {
+  campaign: SMSCampaign
+  sentCount: Int!
+  userErrors: [UserError!]!
+}
+
+type PauseCampaignPayload {
+  campaign: SMSCampaign
+  userErrors: [UserError!]!
+}
+
+type ScheduleNotificationPayload {
+  notification: WineNotification
+  userErrors: [UserError!]!
+}
+
+type CancelNotificationPayload {
+  success: Boolean!
+  userErrors: [UserError!]!
+}
+
+type UpdatePreferencesPayload {
+  success: Boolean!
+  userErrors: [UserError!]!
+}
+
+type OptOutPayload {
+  success: Boolean!
+  userErrors: [UserError!]!
+}
+
+type OptInPayload {
+  success: Boolean!
+  userErrors: [UserError!]!
+}
+
+type BulkSendPayload {
+  successCount: Int!
+  failureCount: Int!
+  userErrors: [UserError!]!
+}
+
+type SegmentPreview {
+  estimatedSize: Int!
+  sampleCustomers: [ID!]!
+}
+
+type SMSAnalytics {
+  totalSent: Int!
+  totalDelivered: Int!
+  deliveryRate: Float!
+  totalFailed: Int!
+  averageDeliveryTime: String
+  topMessageTypes: [MessageTypeStats!]!
+  dailyVolume: [DailyVolumeStats!]!
+}
+
+type WineNotificationAnalytics {
+  totalNotifications: Int!
+  deliveryStats: SMSDeliveryStats!
+  topNotificationTypes: [NotificationTypeStats!]!
+  customerEngagement: CustomerEngagementStats!
+}
+
+type MessageTypeStats {
+  messageType: WineMessageType!
+  count: Int!
+  deliveryRate: Float!
+}
+
+type DailyVolumeStats {
+  date: String!
+  sent: Int!
+  delivered: Int!
+}
+
+type NotificationTypeStats {
+  notificationType: WineNotificationType!
+  count: Int!
+  deliveryRate: Float!
+  engagementRate: Float
+}
+
+type CustomerEngagementStats {
+  activeCustomers: Int!
+  optOutRate: Float!
+  averageResponseTime: String
+  topEngagementTimes: [String!]!
+}
+
+type UserError {
+  field: [String!]
+  message: String!
+  code: String
+}
