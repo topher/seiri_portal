@@ -1,0 +1,477 @@
+# Shopify E-commerce Integration Schema
+# Priority #1 API for wine store federation
+
+extend schema
+  @link(url: "https://specs.apollographql.org/federation/v2.0", import: ["@key", "@external"])
+
+type ShopifyProduct @key(fields: "id") {
+  id: ID!
+  title: String!
+  handle: String!
+  status: ProductStatus!
+  vendor: String
+  productType: String
+  tags: [String!]!
+  variants: [ShopifyVariant!]!
+  
+  # Wine-specific metadata
+  wineDetails: WineDetails
+  
+  # Pricing and inventory
+  priceRange: PriceRange!
+  totalInventory: Int!
+  
+  # SEO and content
+  seo: SEO
+  description: String
+  descriptionHtml: String
+  
+  # Timestamps
+  createdAt: String!
+  updatedAt: String!
+}
+
+type ShopifyVariant @key(fields: "id") {
+  id: ID!
+  productId: ID!
+  title: String!
+  sku: String
+  barcode: String
+  
+  # Pricing
+  price: Money!
+  compareAtPrice: Money
+  
+  # Inventory
+  inventoryQuantity: Int!
+  inventoryPolicy: InventoryPolicy!
+  
+  # Wine-specific fields
+  vintage: String
+  bottleSize: String
+  
+  # Physical attributes
+  weight: Float
+  weightUnit: WeightUnit
+  
+  # Availability
+  availableForSale: Boolean!
+  
+  # Timestamps
+  createdAt: String!
+  updatedAt: String!
+}
+
+type ShopifyOrder @key(fields: "id") {
+  id: ID!
+  orderNumber: Int!
+  name: String!
+  
+  # Customer information
+  customer: ShopifyCustomer
+  email: String
+  phone: String
+  
+  # Order details
+  lineItems: [ShopifyLineItem!]!
+  totalPrice: Money!
+  subtotalPrice: Money!
+  totalTax: Money!
+  totalShippingPrice: Money!
+  
+  # Status tracking
+  financialStatus: FinancialStatus
+  fulfillmentStatus: FulfillmentStatus
+  
+  # Addresses
+  billingAddress: Address
+  shippingAddress: Address
+  
+  # Wine order context
+  wineOrderDetails: WineOrderDetails
+  
+  # Timestamps
+  createdAt: String!
+  updatedAt: String!
+  processedAt: String
+}
+
+type ShopifyCustomer @key(fields: "id") {
+  id: ID!
+  email: String!
+  firstName: String
+  lastName: String
+  phone: String
+  
+  # Customer metrics
+  ordersCount: Int!
+  totalSpent: Money!
+  
+  # Wine customer profile
+  wineProfile: WineCustomerProfile
+  
+  # Marketing
+  acceptsMarketing: Boolean!
+  marketingOptInLevel: String
+  
+  # Status
+  state: CustomerState!
+  verifiedEmail: Boolean!
+  
+  # Timestamps
+  createdAt: String!
+  updatedAt: String!
+}
+
+type ShopifyLineItem @key(fields: "id") {
+  id: ID!
+  productId: ID!
+  variantId: ID!
+  
+  # Product details
+  title: String!
+  variantTitle: String
+  sku: String
+  
+  # Quantity and pricing
+  quantity: Int!
+  price: Money!
+  totalDiscount: Money!
+  
+  # Wine-specific line item data
+  wineItemDetails: WineLineItemDetails
+  
+  # Gift options
+  giftCard: Boolean!
+  
+  # Properties (custom fields)
+  properties: [OrderProperty!]!
+}
+
+# Wine-specific types
+type WineDetails {
+  vintage: String
+  varietal: [String!]!
+  region: String
+  country: String
+  appellation: String
+  alcoholContent: Float
+  tannins: TastingNote
+  acidity: TastingNote
+  body: WineBody
+  sweetness: WineSweetness
+  tastingNotes: [String!]!
+  pairingNotes: [String!]!
+  winemaker: String
+  vineyard: String
+}
+
+type WineOrderDetails {
+  specialInstructions: String
+  deliveryDate: String
+  giftMessage: String
+  cellarLocation: String
+  drinkingWindow: String
+}
+
+type WineCustomerProfile {
+  preferredVarietals: [String!]!
+  preferredRegions: [String!]!
+  preferredPriceRange: PriceRange
+  tastingPreferences: TastingPreferences
+  lastOrderDate: String
+  loyaltyTier: WineLoyaltyTier
+}
+
+type WineLineItemDetails {
+  cellarRecommendation: String
+  servingTemperature: String
+  decantingTime: String
+  glasswareRecommendation: String
+}
+
+type TastingPreferences {
+  preferredTannins: TastingNote
+  preferredAcidity: TastingNote
+  preferredBody: WineBody
+  preferredSweetness: WineSweetness
+  favoriteStyles: [String!]!
+}
+
+# Supporting types
+type Money {
+  amount: String!
+  currencyCode: String!
+}
+
+type PriceRange {
+  minVariantPrice: Money!
+  maxVariantPrice: Money!
+}
+
+type SEO {
+  title: String
+  description: String
+}
+
+type Address {
+  address1: String
+  address2: String
+  city: String
+  province: String
+  country: String
+  zip: String
+  name: String
+  company: String
+  phone: String
+}
+
+type OrderProperty {
+  name: String!
+  value: String!
+}
+
+# Enums
+enum ProductStatus {
+  ACTIVE
+  ARCHIVED
+  DRAFT
+}
+
+enum InventoryPolicy {
+  DENY
+  CONTINUE
+}
+
+enum WeightUnit {
+  GRAMS
+  KILOGRAMS
+  OUNCES
+  POUNDS
+}
+
+enum FinancialStatus {
+  AUTHORIZED
+  PAID
+  PARTIALLY_PAID
+  PARTIALLY_REFUNDED
+  PENDING
+  REFUNDED
+  VOIDED
+}
+
+enum FulfillmentStatus {
+  FULFILLED
+  NULL
+  PARTIAL
+  RESTOCKED
+}
+
+enum CustomerState {
+  DISABLED
+  ENABLED
+  INVITED
+  DECLINED
+}
+
+enum TastingNote {
+  LOW
+  MEDIUM_MINUS
+  MEDIUM
+  MEDIUM_PLUS
+  HIGH
+}
+
+enum WineBody {
+  LIGHT
+  MEDIUM_LIGHT
+  MEDIUM
+  MEDIUM_FULL
+  FULL
+}
+
+enum WineSweetness {
+  BONE_DRY
+  DRY
+  OFF_DRY
+  MEDIUM_DRY
+  MEDIUM_SWEET
+  SWEET
+}
+
+enum WineLoyaltyTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+}
+
+# Queries
+type Query {
+  # Product queries
+  shopifyProduct(id: ID!): ShopifyProduct
+  shopifyProducts(
+    first: Int = 10
+    after: String
+    query: String
+    tags: [String!]
+    status: ProductStatus
+  ): ProductConnection!
+  
+  # Wine-specific product queries
+  winesByVarietal(varietal: String!, first: Int = 10): ProductConnection!
+  winesByRegion(region: String!, first: Int = 10): ProductConnection!
+  winesByVintage(vintage: String!, first: Int = 10): ProductConnection!
+  winesTockLevels: [InventoryLevel!]!
+  
+  # Order queries
+  shopifyOrder(id: ID!): ShopifyOrder
+  shopifyOrders(
+    first: Int = 10
+    after: String
+    financialStatus: FinancialStatus
+    fulfillmentStatus: FulfillmentStatus
+  ): OrderConnection!
+  
+  # Customer queries
+  shopifyCustomer(id: ID!): ShopifyCustomer
+  shopifyCustomers(
+    first: Int = 10
+    after: String
+    query: String
+  ): CustomerConnection!
+  
+  # Wine customer analytics
+  wineCustomerInsights(customerId: ID!): WineCustomerInsights!
+}
+
+# Mutations
+type Mutation {
+  # Product management
+  createWineProduct(input: CreateWineProductInput!): CreateWineProductPayload!
+  updateWineProduct(id: ID!, input: UpdateWineProductInput!): UpdateWineProductPayload!
+  updateWineInventory(input: UpdateInventoryInput!): UpdateInventoryPayload!
+  
+  # Order management
+  createWineOrder(input: CreateWineOrderInput!): CreateWineOrderPayload!
+  updateOrderFulfillment(id: ID!, input: FulfillmentInput!): UpdateOrderPayload!
+  
+  # Customer management
+  updateWineProfile(customerId: ID!, input: WineProfileInput!): UpdateCustomerPayload!
+  
+  # Inventory sync
+  syncInventoryWithPOS(restaurantId: ID!): SyncInventoryPayload!
+}
+
+# Connection types for pagination
+type ProductConnection {
+  edges: [ProductEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type ProductEdge {
+  node: ShopifyProduct!
+  cursor: String!
+}
+
+type OrderConnection {
+  edges: [OrderEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type OrderEdge {
+  node: ShopifyOrder!
+  cursor: String!
+}
+
+type CustomerConnection {
+  edges: [CustomerEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type CustomerEdge {
+  node: ShopifyCustomer!
+  cursor: String!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+# Input types and payloads would be defined here...
+# (Omitted for brevity, but would include all necessary input types)
+
+type CreateWineProductInput {
+  title: String!
+  description: String
+  wineDetails: WineDetailsInput!
+  variants: [WineVariantInput!]!
+  tags: [String!]!
+}
+
+type WineDetailsInput {
+  vintage: String
+  varietal: [String!]!
+  region: String
+  country: String
+  alcoholContent: Float
+  tastingNotes: [String!]!
+}
+
+type WineVariantInput {
+  title: String!
+  sku: String
+  price: String!
+  inventoryQuantity: Int!
+  vintage: String
+  bottleSize: String
+}
+
+# Payload types
+type CreateWineProductPayload {
+  product: ShopifyProduct
+  userErrors: [UserError!]!
+}
+
+type UpdateWineProductPayload {
+  product: ShopifyProduct
+  userErrors: [UserError!]!
+}
+
+type UpdateInventoryPayload {
+  success: Boolean!
+  inventoryLevels: [InventoryLevel!]!
+  userErrors: [UserError!]!
+}
+
+type UserError {
+  field: [String!]
+  message: String!
+  code: String
+}
+
+type InventoryLevel {
+  productId: ID!
+  variantId: ID!
+  available: Int!
+  onHand: Int!
+  committed: Int!
+  location: String!
+}
+
+type WineCustomerInsights {
+  customerId: ID!
+  totalSpent: Money!
+  orderFrequency: String!
+  favoriteVarietals: [String!]!
+  averageOrderValue: Money!
+  lastOrderDate: String
+  recommendedWines: [ShopifyProduct!]!
+}

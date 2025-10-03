@@ -1,0 +1,28 @@
+# MyceliumQL Apollo Federation v2 Configuration
+# Priority API integrations: Shopify, Twilio, SendGrid
+
+federation_version: 2
+subgraphs:
+  # Priority #1: Shopify E-commerce Integration
+  shopify:
+    routing_url: http://localhost:4001/graphql
+    schema:
+      file: ../cartridges/shopify/src/schema.graphql
+    
+  # Priority #2: Twilio SMS Integration  
+  twilio:
+    routing_url: http://localhost:4002/graphql
+    schema:
+      file: ../cartridges/twilio/src/schema.graphql
+      
+  # Priority #3: SendGrid Email Integration
+  sendgrid:
+    routing_url: http://localhost:4003/graphql
+    schema:
+      file: ../cartridges/sendgrid/src/schema.graphql
+      
+  # Core graph data layer
+  neo4j:
+    routing_url: http://localhost:4004/graphql
+    schema:
+      file: ../services/neo4j-graphql/src/schema.graphql

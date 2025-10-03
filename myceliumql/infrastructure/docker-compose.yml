@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # Development infrastructure
+  neo4j:
+    image: neo4j:5.15-community
+    environment:
+      NEO4J_AUTH: neo4j/mycelium123
+      NEO4J_PLUGINS: '["graph-data-science", "apoc"]'
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  # MyceliumQL Services
+  gateway:
+    build: ../services/gateway
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - NEO4J_URI=bolt://neo4j:7687
+      - REDIS_HOST=redis
+      - KAFKA_BROKER=kafka:9092
+    depends_on:
+      - neo4j
+      - redis
+      - kafka
+    volumes:
+      - ../supergraph.graphql:/app/supergraph.graphql
+
+  webhook-router:
+    build: ../services/webhook-router
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEO4J_URI=bolt://neo4j:7687
+      - REDIS_HOST=redis
+    depends_on:
+      - neo4j
+      - redis
+
+  registry:
+    build: ../services/registry
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - NEO4J_URI=bolt://neo4j:7687
+      - REDIS_HOST=redis
+    depends_on:
+      - neo4j
+      - redis
+
+  # Priority Cartridges
+  shopify-cartridge:
+    build: ../cartridges/shopify
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=development
+      - REGISTRY_URL=http://registry:5000
+
+  twilio-cartridge:
+    build: ../cartridges/twilio
+    ports:
+      - "4002:4002"
+    environment:
+      - NODE_ENV=development
+      - REGISTRY_URL=http://registry:5000
+
+  sendgrid-cartridge:
+    build: ../cartridges/sendgrid
+    ports:
+      - "4003:4003"
+    environment:
+      - NODE_ENV=development
+      - REGISTRY_URL=http://registry:5000
+
+volumes:
+  neo4j_data:
+  redis_data:
